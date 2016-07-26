@@ -15,7 +15,7 @@ defineModule(sim, list(
   reqdPkgs = list("dplyr", "magrittr", "raster"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
-    defineParameter(name = "newData", class = "character", default = "", desc = "optionally, the name of a data.frame, a RasterStack (or a list of RasterStacks for time series) loaded as inputs during the simInit, in which to look for variables with which to predict. If omitted, the fitted values are used.")
+    defineParameter(name = "newData", class = "character", default = NA, desc = "optionally, a character vector indicating the name(s) of object(s) accessible in the sim environment, in which to look for variables with which to predict. Objects can be data.frame(s), RasterLayer(s), or RasterStack(s) (for time series). If omitted, the fitted values are used.")
   ), #It can be a data.frame or a list of rasters (or stacks if its a time series).
   inputObjects = data.frame(
     objectName = "fireSense_SizeFit",
@@ -25,7 +25,7 @@ defineModule(sim, list(
     stringsAsFactors = FALSE
   ),
   outputObjects = data.frame(
-    objectName = c("fireSense_SizeBeta", "fireSense_SizeTheta"),
+    objectName = c("fireSense_SizePredictBeta", "fireSense_SizePredictTheta"),
     objectClass = c("ANY", "ANY"),
     other = NA_character_,
     stringsAsFactors = FALSE
@@ -33,14 +33,25 @@ defineModule(sim, list(
 ))
 
 ## Toolbox: set of functions used internally by the module
-  ## Predict function
-    setMethod(f = "predict",
-              signature = "fireSense_SizeFit",
-              definition = function(object, data, sim){
-                browser()
-              }
-    )
-
+  ## Predict functions
+    fireSense_SizePredictBetaRaster <- function(model, data, sim) {
+      sim$fireSense_SizePredictBeta <- sim$fireSense_SizeFit$formula$beta %>%
+        terms.formula %>%
+        delete.response %>%
+        model.matrix(data) %>%
+        `%*%` (sim$fireSense_SizeFit$coefBeta) %>%
+        drop %>% sim$fireSense_SizeFit$linkFunBeta$linkinv(.)
+    }
+    
+    fireSense_SizePredictThetaRaster <- function(model, data, sim) {
+      sim$fireSense_SizePredictTheta <- sim$fireSense_SizeFit$formula$theta %>%
+        terms.formula %>%
+        delete.response %>%
+        model.matrix(data) %>%
+        `%*%` (sim$fireSense_SizeFit$coefTheta) %>%
+        drop %>% sim$fireSense_SizeFit$linkFunTheta$linkinv(.)
+    }
+    
 ## event types
 #   - type `init` is required for initialiazation
 
@@ -68,26 +79,103 @@ doEvent.fireSense_SizePredict = function(sim, eventTime, eventType, debug = FALS
 ### template initialization
 fireSense_SizePredictInit <- function(sim) {
   
-  if (is.null(params(sim)$fireSense_SizePredict$newData)) {
-    sim$fireSense_SizeFit$fitted.values
-  } else {
+  ## Note: is.na() is temporary and should be replaced by is.null in the future
+  stopifnot(!is.null(params(sim)$fireSense_SizePredict$newData[1]))
+  
+  if (is.na(params(sim)$fireSense_SizePredict$newData[1])) {
+    
+    sim$fireSense_SizePredictBeta <- sim$fireSense_SizeFit$fitted.values$beta
+    sim$fireSense_SizePredictTheta <- sim$fireSense_SizeFit$fitted.values$theta
+    
+  } else if (length(params(sim)$fireSense_SizePredict$newData) == 1L) {
+    
     if (is.data.frame(sim[[params(sim)$fireSense_SizePredict$newData]])) {
-      data.frame(beta = 
-                   model.matrix(sim$fireSense_SizeFit$formula$beta, sim[[params(sim)$fireSense_SizePredict$newData]]) %>%
-                   . %*% sim$fireSense_SizeFit$coefBeta %>%
-                   drop %>%
-                   sim$fireSense_SizeFit$linkFunTheta$linkinv,
-                 theta = 
-                   model.matrix(sim$fireSense_SizeFit$formula$theta, sim[[params(sim)$fireSense_SizePredict$newData]]) %>%
-                   . %*% sim$fireSense_SizeFit$coefTheta %>%
-                   drop %>%
-                   sim$fireSense_SizeFit$linkFunTheta$linkinv)
+      
+      sim$fireSense_SizePredictBeta <- sim$fireSense_SizeFit$formula$beta %>%
+        model.matrix(sim[[params(sim)$fireSense_SizePredict$newData]]) %>%
+        `%*%` (sim$fireSense_SizeFit$coefBeta) %>%
+        drop %>% sim$fireSense_SizeFit$linkFunBeta$linkinv(.)
+      sim$fireSense_SizePredictTheta <- sim$fireSense_SizeFit$formula$theta %>%
+        model.matrix(sim[[params(sim)$fireSense_SizePredict$newData]]) %>%
+        `%*%` (sim$fireSense_SizeFit$coefTheta) %>%
+        drop %>% sim$fireSense_SizeFit$linkFunTheta$linkinv(.)
+      
     } else if (is(sim[[params(sim)$fireSense_SizePredict$newData]], "RasterStack")) {
-      predict(sim[[params(sim)$fireSense_SizePredict$newData]], model = sim$fireSense_SizeFit, fun = predict, na.rm = TRUE)
+      
+      sim$fireSense_SizePredictBeta <- sim[[params(sim)$fireSense_SizePredict$newData]] %>%
+        unstack %>% 
+        lapply(function(x, sim) 
+          predict(setNames(x, params(sim)$fireSense_SizePredict$newData), 
+                  model = sim$fireSense_SizeFit, fun = fireSense_SizePredictBetaRaster, 
+                  na.rm = TRUE, sim = sim), sim = sim) %>%
+        stack
+      
+      sim$fireSense_SizePredictTheta <- sim[[params(sim)$fireSense_SizePredict$newData]] %>%
+        unstack %>% 
+        lapply(function(x, sim) 
+          predict(setNames(x, params(sim)$fireSense_SizePredict$newData), 
+                  model = sim$fireSense_SizeFit, fun = fireSense_SizePredictThetaRaster, 
+                  na.rm = TRUE, sim = sim), sim = sim) %>%
+        stack
+    
+    } else if (is(sim[[params(sim)$fireSense_SizePredict$newData]], "RasterLayer")) {
+      
+      sim$fireSense_SizePredictBeta <- 
+        predict(sim[[params(sim)$fireSense_SizePredict$newData]], model = sim$fireSense_SizeFit, fun = fireSense_SizePredictBetaRaster, na.rm = TRUE, sim = sim)
+      sim$fireSense_SizePredictTheta <- 
+        predict(sim[[params(sim)$fireSense_SizePredict$newData]], model = sim$fireSense_SizeFit, fun = fireSense_SizePredictThetaRaster, na.rm = TRUE, sim = sim)
+      
     } else {
-      stop(paste0("fireSense_SizePredict> '", params(sim)$fireSense_SizePredict$newData, "' is not a 'data.frame', or a list of 'RasterLayer' or 'RasterStack'."))
+      stop(paste0("fireSense_SizePredict> '", params(sim)$fireSense_SizePredict$newData, "' is not a 'data.frame', a 'RasterLayer' or a 'RasterStack'."))
+    }
+  } else {
+
+    if (all(unlist(lapply(params(sim)$fireSense_SizePredict$newData, function(x) is.data.frame(sim[[x]]))))) {
+
+      sim$fireSense_SizePredictBeta <- sim$fireSense_SizeFit$formula$beta %>%
+        model.matrix(dplyr::bind_cols(mget(params(sim)$fireSense_SizePredict$newData, envir = envir(sim), inherits = FALSE))) %>%
+        `%*%` (sim$fireSense_SizeFit$coefBeta) %>%
+        drop %>% sim$fireSense_SizeFit$linkFunBeta$linkinv(.)
+      sim$fireSense_SizePredictTheta <- sim$fireSense_SizeFit$formula$theta %>%
+        model.matrix(dplyr::bind_cols(mget(params(sim)$fireSense_SizePredict$newData, envir = envir(sim), inherits = FALSE))) %>%
+        `%*%` (sim$fireSense_SizeFit$coefTheta) %>%
+        drop %>% sim$fireSense_SizeFit$linkFunTheta$linkinv(.)
+    } else if (all(unlist(lapply(params(sim)$fireSense_SizePredict$newData, function(x) is(sim[[x]], "RasterStack"))))) {
+
+      sim$fireSense_SizePredictBeta <- 
+        mget(params(sim)$fireSense_SizePredict$newData, envir = envir(sim), inherits = FALSE) %>%
+        lapply(unstack) %>%
+        c(list(FUN = function(...) stack(list(...)), SIMPLIFY = FALSE)) %>%
+        do.call("mapply", args = ., quote = TRUE) %>%
+        lapply(function(x, sim)
+          predict(x, model = sim$fireSense_SizeFit, fun = fireSense_SizePredictBetaRaster, 
+                  na.rm = TRUE, sim = sim), sim = sim) %>%
+        stack
+
+      sim$fireSense_SizePredictTheta <- 
+        mget(params(sim)$fireSense_SizePredict$newData, envir = envir(sim), inherits = FALSE) %>%
+        lapply(unstack) %>%
+        c(list(FUN = function(...) stack(list(...)), SIMPLIFY = FALSE)) %>%
+        do.call("mapply", args = ., quote = TRUE) %>%
+        lapply(function(x, sim)
+          predict(x, model = sim$fireSense_SizeFit, fun = fireSense_SizePredictThetaRaster, 
+                  na.rm = TRUE, sim = sim), sim = sim) %>%
+        stack
+      
+    } else if (all(unlist(lapply(params(sim)$fireSense_SizePredict$newData, function(x) is(sim[[x]], "RasterLayer"))))) {
+      
+      sim$fireSense_SizePredictBeta <- 
+        predict(stack(mget(params(sim)$fireSense_SizePredict$newData, envir = envir(sim), inherits = FALSE)), model = sim$fireSense_SizeFit, fun = fireSense_SizePredictBetaRaster, na.rm = TRUE, sim = sim)
+      sim$fireSense_SizePredictTheta <- 
+        predict(stack(mget(params(sim)$fireSense_SizePredict$newData, envir = envir(sim), inherits = FALSE)), model = sim$fireSense_SizeFit, fun = fireSense_SizePredictThetaRaster, na.rm = TRUE, sim = sim)
+      
+    } else {
+      stop(paste0("fireSense_SizePredict> '", 
+        paste(params(sim)$fireSense_SizePredict$newData[unlist(lapply(params(sim)$fireSense_SizePredict, 
+          function(x) is.data.frame(x) || is(x, "RasterLayer") || is(x, "RasterStack")))], collapse = ","),
+        "' is not a 'data.frame', a 'RasterLayer' or a 'RasterStack'."))
     }
   }
-
+  
   invisible(sim)
 }

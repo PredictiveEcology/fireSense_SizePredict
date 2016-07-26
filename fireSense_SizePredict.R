@@ -140,13 +140,14 @@ fireSense_SizePredictInit <- function(sim) {
         model.matrix(dplyr::bind_cols(mget(params(sim)$fireSense_SizePredict$newData, envir = envir(sim), inherits = FALSE))) %>%
         `%*%` (sim$fireSense_SizeFit$coefTheta) %>%
         drop %>% sim$fireSense_SizeFit$linkFunTheta$linkinv(.)
+      
     } else if (all(unlist(lapply(params(sim)$fireSense_SizePredict$newData, function(x) is(sim[[x]], "RasterStack"))))) {
 
       sim$fireSense_SizePredictBeta <- 
         mget(params(sim)$fireSense_SizePredict$newData, envir = envir(sim), inherits = FALSE) %>%
         lapply(unstack) %>%
         c(list(FUN = function(...) stack(list(...)), SIMPLIFY = FALSE)) %>%
-        do.call("mapply", args = ., quote = TRUE) %>%
+        do.call("mapply", args = .) %>%
         lapply(function(x, sim)
           predict(x, model = sim$fireSense_SizeFit, fun = fireSense_SizePredictBetaRaster, 
                   na.rm = TRUE, sim = sim), sim = sim) %>%
@@ -156,7 +157,7 @@ fireSense_SizePredictInit <- function(sim) {
         mget(params(sim)$fireSense_SizePredict$newData, envir = envir(sim), inherits = FALSE) %>%
         lapply(unstack) %>%
         c(list(FUN = function(...) stack(list(...)), SIMPLIFY = FALSE)) %>%
-        do.call("mapply", args = ., quote = TRUE) %>%
+        do.call("mapply", args = .) %>%
         lapply(function(x, sim)
           predict(x, model = sim$fireSense_SizeFit, fun = fireSense_SizePredictThetaRaster, 
                   na.rm = TRUE, sim = sim), sim = sim) %>%

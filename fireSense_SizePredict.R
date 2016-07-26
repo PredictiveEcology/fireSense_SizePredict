@@ -12,7 +12,7 @@ defineModule(sim, list(
   timeunit = NA_character_, # e.g., "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "fireSense_SizePredict.Rmd"),
-  reqdPkgs = list("magrittr", "raster"),
+  reqdPkgs = list("dplyr", "magrittr", "raster"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
     defineParameter(name = "newData", class = "character", default = "", desc = "optionally, the name of a data.frame, a RasterStack (or a list of RasterStacks for time series) loaded as inputs during the simInit, in which to look for variables with which to predict. If omitted, the fitted values are used.")

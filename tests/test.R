@@ -10,7 +10,6 @@ library(SpaDES)
     #     files = c("Z:/fireSense_SizeFit1var.RData", "Z:/dataFireSense_SizePredict.RData"),
     #     functions = c("load", "load"),
     #     package = c("base", "base"),
-    #     loadTime = 0,
     #     stringsAsFactors = FALSE)
     # )
 
@@ -41,7 +40,6 @@ library(SpaDES)
     #     functions = c("load", "raster"),
     #     package = c("base", "raster"),
     #     objectName = c("fireSense_SizeFit", "MDC_JUN"),
-    #     loadTime = 0,
     #     stringsAsFactors = FALSE)
     # )
 
@@ -55,7 +53,6 @@ library(SpaDES)
     #     functions = c("load", "raster", "raster", "raster", "raster", "raster", "raster"),
     #     package = c("base", "raster", "raster", "raster", "raster", "raster", "raster"),
     #     objectName = c("fireSense_SizeFit", "MDC_JUN", "MDC_MJ", "HW", "DIST", "O", "WATER"),
-    #     loadTime = 0,
     #     stringsAsFactors = FALSE)
     # )
 
@@ -70,7 +67,6 @@ library(SpaDES)
     #     functions = c("load", "stack"),
     #     package = c("base", "raster"),
     #     objectName = c("fireSense_SizeFit", "MDC_JUN"),
-    #     loadTime = 0,
     #     stringsAsFactors = FALSE)
     # )
 

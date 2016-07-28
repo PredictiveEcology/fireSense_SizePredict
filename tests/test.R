@@ -14,20 +14,20 @@ library(SpaDES)
     # )
 
   ## 6 var
-    # mySim <- simInit(
-    #   times = list(start = 1, end = 2, timeunit = "year"),
-    #   modules = list("fireSense_SizePredict"),
-    #   paths = list(modulePath = " # replace with empty string instead"),
-    #   params = list(fireSense_SizePredict = list(newData = c("dataFireSense_SizePredict", "dataFireSense_SizePredict2"))),
-    #   inputs = data.frame(
-    #     files = c("Z:/fireSense_SizeFit6var.RData", "Z:/dataFireSense_SizePredict.RData"),
-    #     functions = c("load", "load"),
-    #     package = c("base", "base"),
-    #     stringsAsFactors = FALSE)
-    # )
-    # mySim <- loadFiles(mySim)
-    # mySim$dataFireSense_SizePredict2 <- dplyr::select(mySim$dataFireSense_SizePredict, MDC_JUN)
-    # mySim$dataFireSense_SizePredict <- dplyr::select(mySim$dataFireSense_SizePredict, -MDC_JUN)
+    mySim <- simInit(
+      times = list(start = 1, end = 2, timeunit = "year"),
+      modules = list("fireSense_SizePredict"),
+      paths = list(modulePath = " # replace with empty string instead"),
+      params = list(fireSense_SizePredict = list(data = c("dataFireSense_SizePredict", "dataFireSense_SizePredict2"))),
+      inputs = data.frame(
+        files = c("Z:/fireSense_SizeFit6var.RData", "Z:/dataFireSense_SizePredict.RData"),
+        functions = c("load", "load"),
+        package = c("base", "base"),
+        stringsAsFactors = FALSE)
+    )
+    mySim <- loadFiles(mySim)
+    mySim$dataFireSense_SizePredict2 <- dplyr::select(mySim$dataFireSense_SizePredict, MDC_JUN)
+    mySim$dataFireSense_SizePredict <- dplyr::select(mySim$dataFireSense_SizePredict, -MDC_JUN)
 
 ## RasterLayer
   ## 1 var

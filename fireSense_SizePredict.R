@@ -16,6 +16,9 @@ defineModule(sim, list(
   parameters = rbind(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
     defineParameter(name = "newData", class = "character", default = NA, desc = "optionally, a character vector indicating the name(s) of object(s) accessible in the sim environment, in which to look for variables with which to predict. Objects can be data.frame(s), RasterLayer(s), or RasterStack(s) (for time series). If omitted, the fitted values are used.")
+    defineParameter(name = "mapping", class = "character", default = NA, desc = "optional. Named character
+      vector to map variable names in the formula to those in the data object(s). Names of unmapped
+      variables are used directly to look for variables in data object(s) or in the sim environment.")
   ), #It can be a data.frame or a list of rasters (or stacks if its a time series).
   inputObjects = data.frame(
     objectName = "fireSense_SizeFit",
@@ -35,18 +38,15 @@ defineModule(sim, list(
 ## Toolbox: set of functions used internally by the module
   ## Predict functions
     fireSense_SizePredictBetaRaster <- function(model, data, sim) {
-      sim$fireSense_SizePredictBeta <- sim$fireSense_SizeFit$formula$beta %>%
-        terms.formula %>%
-        delete.response %>%
+
+      sim$fireSense_SizePredictBeta <- model %>%
         model.matrix(data) %>%
         `%*%` (sim$fireSense_SizeFit$coefBeta) %>%
         drop %>% sim$fireSense_SizeFit$linkFunBeta$linkinv(.)
     }
     
     fireSense_SizePredictThetaRaster <- function(model, data, sim) {
-      sim$fireSense_SizePredictTheta <- sim$fireSense_SizeFit$formula$theta %>%
-        terms.formula %>%
-        delete.response %>%
+      sim$fireSense_SizePredictTheta <- model %>%
         model.matrix(data) %>%
         `%*%` (sim$fireSense_SizeFit$coefTheta) %>%
         drop %>% sim$fireSense_SizeFit$linkFunTheta$linkinv(.)
@@ -80,9 +80,31 @@ doEvent.fireSense_SizePredict = function(sim, eventTime, eventType, debug = FALS
 fireSense_SizePredictInit <- function(sim) {
   
   ## Note: is.na() is temporary and should be replaced by is.null in the future
-  stopifnot(!is.null(params(sim)$fireSense_SizePredict$newData[1]))
+  stopifnot(!is.null(params(sim)$fireSense_SizePredict$data[1]))
+  stopifnot(!is.null(params(sim)$fireSense_SizePredict$mapping[1]))
+  termsBeta <- delete.response(terms.formula(formulaBeta <- sim$fireSense_SizeFit$formula$beta))
+  termsTheta <- delete.response(terms.formula(formulaTheta <- sim$fireSense_SizeFit$formula$theta))
+  
+  if (!is.na(params(sim)$fireSense_SizePredict$mapping[1])) {
+
+    for (i in 1:length(params(sim)$fireSense_SizePredict$mapping)) {
+      
+      attr(termsBeta, "term.labels") <- gsub(pattern = names(params(sim)$fireSense_SizePredict$mapping[i]),
+                                             replacement = params(sim)$fireSense_SizePredict$mapping[i], x = attr(termsBeta, "term.labels"))
+      attr(termsTheta, "term.labels") <- gsub(pattern = names(params(sim)$fireSense_SizePredict$mapping[i]),
+                                              replacement = params(sim)$fireSense_SizePredict$mapping[i], x = attr(termsTheta, "term.labels"))
+    }
+  
+  }
+
+  formulaBeta <- reformulate(attr(termsBeta, "term.labels"), response = NULL, attr(termsBeta, "intercept"))
+  formulaTheta <- reformulate(attr(termsTheta, "term.labels"), response = NULL, attr(termsTheta, "intercept"))
   
   if (is.na(params(sim)$fireSense_SizePredict$newData[1])) {
+  varsBeta <- all.vars(formulaBeta)
+  varsTheta <- all.vars(formulaTheta)
+  allVars <- unique(c(varsBeta, varsTheta))
+  
     
     sim$fireSense_SizePredictBeta <- sim$fireSense_SizeFit$fitted.values$beta
     sim$fireSense_SizePredictTheta <- sim$fireSense_SizeFit$fitted.values$theta

@@ -12,7 +12,7 @@ defineModule(sim, list(
   timeunit = NA_character_, # e.g., "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "fireSense_SizePredict.Rmd"),
-  reqdPkgs = list("dplyr", "magrittr", "raster"),
+  reqdPkgs = list("magrittr", "raster"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
     defineParameter(name = "data", class = "character", default = NA, desc = "optional. A character vector

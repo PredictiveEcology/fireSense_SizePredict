@@ -183,7 +183,7 @@ fireSense_SizePredictRun <- function(sim) {
     
     if (any(!varsExist)) {
       stop(paste0("fireSense_SizePredict> Variable '", allVars[which(!varsExist)[1L]], "' not found."))
-    } else if (any(varsTypes)) {
+    } else if (any(varsClass)) {
       stop("fireSense_SizePredict> Variables are not of the same class.")
     } else {
       stop(paste0("fireSense_SizePredict> Variable '", 

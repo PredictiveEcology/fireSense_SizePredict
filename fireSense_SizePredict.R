@@ -15,16 +15,16 @@ defineModule(sim, list(
   reqdPkgs = list("magrittr", "raster"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
-    defineParameter(name = "data", class = "character", default = NA, desc = "optional. A character vector
-      indicating the name(s) of object(s) present in the sim environment, in which to look for variables
-      with which to predict. Objects can be data.frame(s), RasterLayer(s), RasterStack(s) (for time series), 
-      named list(s) of RasterLayers, or named list(s) of RasterStacks. However, objects of different classes
-      cannot be mixed. For example, variables cannot be searched simultaneously within an object of class
-      data.frame and within an object of class RasterLayer. If omitted, or if variables are not found in the
-      data objects(s), variables are searched in the sim environment."),
+    defineParameter(name = "data", class = "character", default = NA, desc = "optional. A character
+      vector indicating the names of objects present in the sim environment, in which to look for
+      variables with which to predict. Objects can be data.frames, named lists of RasterLayers, or
+      named lists of RasterStacks (for times series). However, objects of different classes cannot
+      be mixed. For example, variables cannot be searched simultaneously within an object of class
+      data.frame and within an object of class RasterLayer. If omitted, or if variables are not
+      found in the data objects, variables are searched in the sim environment."),
     defineParameter(name = "mapping", class = "character", default = NA, desc = "optional. Named character
-      vector to map variable names in the formula to those in the data object(s). Names of unmapped
-      variables are used directly to look for variables in data object(s) or in the sim environment."),
+      vector to map variable names in the formula to those in the data objects. Names of unmapped
+      variables are used directly to look for variables in data objects or in the sim environment."),
     defineParameter(name = "initialRunTime", class = "numeric", default = NA, desc = "optional. Simulation time at which to start this module. If omitted, start at start(sim)."),
     defineParameter(name = "intervalRunModule", class = "numeric", default = NA, desc = "optional. Interval between two module runs.")
   ),
@@ -71,9 +71,9 @@ doEvent.fireSense_SizePredict = function(sim, eventTime, eventType, debug = FALS
     # do stuff for this event
     sim <- sim$fireSense_SizePredictInit(sim)
 
-  } else if (eventType == "predict") {
+  } else if (eventType == "run") {
     
-    sim <- sim$fireSense_SizePredictPredict(sim)
+    sim <- sim$fireSense_SizePredictRun(sim)
     
   } else {
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
@@ -99,7 +99,7 @@ fireSense_SizePredictInit <- function(sim) {
   invisible(sim)
 }
 
-fireSense_SizePredictPredict <- function(sim) {
+fireSense_SizePredictRun <- function(sim) {
   
   ## Note: is.na() is temporary and should be replaced by is.null in the future
   stopifnot(!is.null(params(sim)$fireSense_SizePredict$data[1]))
@@ -128,8 +128,8 @@ fireSense_SizePredictPredict <- function(sim) {
 
   }
 
-  formulaBeta <- reformulate(attr(termsBeta, "term.labels"), response = NULL, attr(termsBeta, "intercept"))
-  formulaTheta <- reformulate(attr(termsTheta, "term.labels"), response = NULL, attr(termsTheta, "intercept"))
+  formulaBeta <- reformulate(attr(termsBeta, "term.labels"), attr(termsBeta, "intercept"))
+  formulaTheta <- reformulate(attr(termsTheta, "term.labels"), attr(termsTheta, "intercept"))
   
   varsBeta <- all.vars(formulaBeta)
   varsTheta <- all.vars(formulaTheta)
@@ -190,7 +190,7 @@ fireSense_SizePredictPredict <- function(sim) {
   }
 
   if (!is.na(params(sim)$fireSense_SizePredict$intervalRunModule))
-    sim <- scheduleEvent(sim, time(sim) + params(sim)$fireSense_SizePredict$intervalRunModule, "fireSense_SizePredict", "predict")
+    sim <- scheduleEvent(sim, time(sim) + params(sim)$fireSense_SizePredict$intervalRunModule, "fireSense_SizePredict", "run")
   
   invisible(sim)
 }

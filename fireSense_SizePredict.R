@@ -162,7 +162,7 @@ fireSense_SizePredictInit <- function(sim) {
     varsClass <- unlist(lapply(allVars, function(x) is.data.frame(dataEnv[[x]]) || is(dataEnv[[x]], "RasterLayer") || is(dataEnv[[x]], "RasterStack")))
     
     if (any(!varsExist)) {
-      stop(paste0("fireSense_SizePredict> Variable '", varsExist[which(!varsExist)[1L]], "' not found."))
+      stop(paste0("fireSense_SizePredict> Variable '", allVars[which(!varsExist)[1L]], "' not found."))
     } else if (any(varsTypes)) {
       stop("fireSense_SizePredict> Variables are not of the same class.")
     } else {

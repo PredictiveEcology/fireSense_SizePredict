@@ -5,6 +5,10 @@ date: "25 July 2016"
 output: pdf_document
 ---
 
+# details
+
+"optionally, a character vector indicating the name(s) of object(s) accessible in the sim environment, in which to look for variables with which to predict. Objects can be data.frame(s), RasterLayer(s), or RasterStack(s) (for time series). If omitted, the fitted values are used.")
+
 # Overview
 
 Provide an overview of what the module does / how to use the module.

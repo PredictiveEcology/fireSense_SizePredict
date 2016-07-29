@@ -24,7 +24,9 @@ defineModule(sim, list(
       data objects(s), variables are searched in the sim environment."),
     defineParameter(name = "mapping", class = "character", default = NA, desc = "optional. Named character
       vector to map variable names in the formula to those in the data object(s). Names of unmapped
-      variables are used directly to look for variables in data object(s) or in the sim environment.")
+      variables are used directly to look for variables in data object(s) or in the sim environment."),
+    defineParameter(name = "initialRunTime", class = "numeric", default = NA, desc = "optional. Simulation time at which to start this module. If omitted, start at start(sim)."),
+    defineParameter(name = "intervalRunModule", class = "numeric", default = NA, desc = "optional. Interval between two module runs.")
   ),
   inputObjects = data.frame(
     objectName = "fireSense_SizeFit",
@@ -69,6 +71,10 @@ doEvent.fireSense_SizePredict = function(sim, eventTime, eventType, debug = FALS
     # do stuff for this event
     sim <- sim$fireSense_SizePredictInit(sim)
 
+  } else if (eventType == "predict") {
+    
+    sim <- sim$fireSense_SizePredictPredict(sim)
+    
   } else {
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
@@ -84,6 +90,16 @@ doEvent.fireSense_SizePredict = function(sim, eventTime, eventType, debug = FALS
 
 ### template initialization
 fireSense_SizePredictInit <- function(sim) {
+  
+  sim <- scheduleEvent(sim, 
+                       eventTime = if (is.na(params(sim)$fireSense_SizePredict$initialRunTime)) start(sim) else params(sim)$fireSense_SizePredict$initialRunTime,
+                       "fireSense_SizePredict",
+                       "predict")
+  
+  invisible(sim)
+}
+
+fireSense_SizePredictPredict <- function(sim) {
   
   ## Note: is.na() is temporary and should be replaced by is.null in the future
   stopifnot(!is.null(params(sim)$fireSense_SizePredict$data[1]))
@@ -173,5 +189,8 @@ fireSense_SizePredictInit <- function(sim) {
     }
   }
 
+  if (!is.na(params(sim)$fireSense_SizePredict$intervalRunModule))
+    sim <- scheduleEvent(sim, time(sim) + params(sim)$fireSense_SizePredict$intervalRunModule, "fireSense_SizePredict", "predict")
+  
   invisible(sim)
 }

@@ -94,7 +94,7 @@ fireSense_SizePredictInit <- function(sim) {
   sim <- scheduleEvent(sim, 
                        eventTime = if (is.na(params(sim)$fireSense_SizePredict$initialRunTime)) start(sim) else params(sim)$fireSense_SizePredict$initialRunTime,
                        "fireSense_SizePredict",
-                       "predict")
+                       "run")
   
   invisible(sim)
 }
@@ -128,8 +128,8 @@ fireSense_SizePredictRun <- function(sim) {
 
   }
 
-  formulaBeta <- reformulate(attr(termsBeta, "term.labels"), attr(termsBeta, "intercept"))
-  formulaTheta <- reformulate(attr(termsTheta, "term.labels"), attr(termsTheta, "intercept"))
+  formulaBeta <- reformulate(attr(termsBeta, "term.labels"), intercept = attr(termsBeta, "intercept"))
+  formulaTheta <- reformulate(attr(termsTheta, "term.labels"), intercept = attr(termsTheta, "intercept"))
   
   varsBeta <- all.vars(formulaBeta)
   varsTheta <- all.vars(formulaTheta)
@@ -147,7 +147,7 @@ fireSense_SizePredictRun <- function(sim) {
       drop %>% sim$fireSense_SizeFit$linkFunTheta$linkinv(.)
     
   } else if (all(unlist(lapply(allVars, function(x) is(envData[[x]], "RasterStack"))))) {
-    
+
     sim$fireSense_SizePredictBeta <- mget(varsBeta, envir = envir(sim), inherits = FALSE) %>%
       lapply(unstack) %>%
       c(list(FUN = function(...) stack(list(...)), SIMPLIFY = FALSE)) %>%

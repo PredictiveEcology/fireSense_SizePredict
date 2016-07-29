@@ -92,7 +92,7 @@ fireSense_SizePredictInit <- function(sim) {
   list2env(as.list(envir(sim)), envir = dataEnv)
   
   if (!is.na(params(sim)$fireSense_SizePredict$data[1]))
-    lapply(params(sim)$fireSense_SizePredict$data, function(x, dataEnv) list2env(sim[[x]], envir = dataEnv), dataEnv = dataEnv)
+    lapply(params(sim)$fireSense_SizePredict$data, function(x, dataEnv) if (is.list(sim[[x]])) list2env(sim[[x]], envir = dataEnv), dataEnv = dataEnv)
 
   termsBeta <- delete.response(terms.formula(formulaBeta <- sim$fireSense_SizeFit$formula$beta))
   termsTheta <- delete.response(terms.formula(formulaTheta <- sim$fireSense_SizeFit$formula$theta))

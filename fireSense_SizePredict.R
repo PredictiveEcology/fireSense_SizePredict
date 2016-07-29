@@ -99,6 +99,7 @@ fireSense_SizePredictInit <- function(sim) {
   termsBeta <- delete.response(terms.formula(formulaBeta <- sim$fireSense_SizeFit$formula$beta))
   termsTheta <- delete.response(terms.formula(formulaTheta <- sim$fireSense_SizeFit$formula$theta))
   
+  ## Mapping variables names to data
   if (!is.na(params(sim)$fireSense_SizePredict$mapping[1])) {
 
     for (i in 1:length(params(sim)$fireSense_SizePredict$mapping)) {
@@ -108,7 +109,7 @@ fireSense_SizePredictInit <- function(sim) {
       attr(termsTheta, "term.labels") <- gsub(pattern = names(params(sim)$fireSense_SizePredict$mapping[i]),
                                               replacement = params(sim)$fireSense_SizePredict$mapping[i], x = attr(termsTheta, "term.labels"))
     }
-  
+
   }
 
   formulaBeta <- reformulate(attr(termsBeta, "term.labels"), response = NULL, attr(termsBeta, "intercept"))
@@ -157,7 +158,7 @@ fireSense_SizePredictInit <- function(sim) {
       stack %>% predict(model = formulaTheta, fun = fireSense_SizePredictThetaRaster, na.rm = TRUE, sim = sim)
     
   } else {
-    
+
     varsExist <- allVars %in% ls(dataEnv)
     varsClass <- unlist(lapply(allVars, function(x) is.data.frame(dataEnv[[x]]) || is(dataEnv[[x]], "RasterLayer") || is(dataEnv[[x]], "RasterStack")))
     

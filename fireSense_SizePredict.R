@@ -105,12 +105,12 @@ fireSense_SizePredictPredict <- function(sim) {
   stopifnot(!is.null(params(sim)$fireSense_SizePredict$data[1]))
   stopifnot(!is.null(params(sim)$fireSense_SizePredict$mapping[1]))
 
-  dataEnv <- new.env(parent = envir(sim))
-  on.exit(rm(dataEnv))
-  list2env(as.list(envir(sim)), envir = dataEnv)
+  envData <- new.env(parent = envir(sim))
+  on.exit(rm(envData))
+  list2env(as.list(envir(sim)), envir = envData)
   
   if (!is.na(params(sim)$fireSense_SizePredict$data[1]))
-    lapply(params(sim)$fireSense_SizePredict$data, function(x, dataEnv) if (is.list(sim[[x]])) list2env(sim[[x]], envir = dataEnv), dataEnv = dataEnv)
+    lapply(params(sim)$fireSense_SizePredict$data, function(x, envData) if (is.list(sim[[x]])) list2env(sim[[x]], envir = envData), envData = envData)
 
   termsBeta <- delete.response(terms.formula(formulaBeta <- sim$fireSense_SizeFit$formula$beta))
   termsTheta <- delete.response(terms.formula(formulaTheta <- sim$fireSense_SizeFit$formula$theta))
@@ -135,18 +135,18 @@ fireSense_SizePredictPredict <- function(sim) {
   varsTheta <- all.vars(formulaTheta)
   allVars <- unique(c(varsBeta, varsTheta))
   
-  if (all(unlist(lapply(allVars, function(x) is.vector(dataEnv[[x]]))))) {
+  if (all(unlist(lapply(allVars, function(x) is.vector(envData[[x]]))))) {
     
     sim$fireSense_SizePredictBeta <- formulaBeta %>%
-      model.matrix(dataEnv) %>%
+      model.matrix(envData) %>%
       `%*%` (sim$fireSense_SizeFit$coefBeta) %>%
       drop %>% sim$fireSense_SizeFit$linkFunBeta$linkinv(.)
     sim$fireSense_SizePredictTheta <- formulaTheta %>%
-      model.matrix(dataEnv) %>%
+      model.matrix(envData) %>%
       `%*%` (sim$fireSense_SizeFit$coefTheta) %>%
       drop %>% sim$fireSense_SizeFit$linkFunTheta$linkinv(.)
     
-  } else if (all(unlist(lapply(allVars, function(x) is(dataEnv[[x]], "RasterStack"))))) {
+  } else if (all(unlist(lapply(allVars, function(x) is(envData[[x]], "RasterStack"))))) {
     
     sim$fireSense_SizePredictBeta <- mget(varsBeta, envir = envir(sim), inherits = FALSE) %>%
       lapply(unstack) %>%
@@ -166,7 +166,7 @@ fireSense_SizePredictPredict <- function(sim) {
                 na.rm = TRUE, sim = sim), sim = sim) %>%
       stack
     
-  } else if (all(unlist(lapply(allVars, function(x) is(dataEnv[[x]], "RasterLayer"))))) {
+  } else if (all(unlist(lapply(allVars, function(x) is(envData[[x]], "RasterLayer"))))) {
     
     sim$fireSense_SizePredictBeta <- mget(varsBeta, envir = envir(sim), inherits = FALSE) %>%
       stack %>% predict(model = formulaBeta, fun = fireSense_SizePredictBetaRaster, na.rm = TRUE, sim = sim)
@@ -175,8 +175,8 @@ fireSense_SizePredictPredict <- function(sim) {
     
   } else {
 
-    varsExist <- allVars %in% ls(dataEnv)
-    varsClass <- unlist(lapply(allVars, function(x) is.data.frame(dataEnv[[x]]) || is(dataEnv[[x]], "RasterLayer") || is(dataEnv[[x]], "RasterStack")))
+    varsExist <- allVars %in% ls(envData)
+    varsClass <- unlist(lapply(allVars, function(x) is.data.frame(envData[[x]]) || is(envData[[x]], "RasterLayer") || is(envData[[x]], "RasterStack")))
     
     if (any(!varsExist)) {
       stop(paste0("fireSense_SizePredict> Variable '", allVars[which(!varsExist)[1L]], "' not found."))

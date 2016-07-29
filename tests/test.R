@@ -59,31 +59,31 @@ library(SpaDES)
 
 ## RasterStack (time series) (with mapping)
   # 1 var
-    mySim <- simInit(
-      times = list(start = 1, end = 2, timeunit = "year"),
-      modules = list("fireSense_SizePredict"),
-      paths = list(modulePath = " # replace with empty string instead"),
-      params = list(fireSense_SizePredict = list(mapping = c(MDC_JUN = "MDC_JUN__STACK"))),
-      inputs = data.frame(
-        files = c("Z:/fireSense_SizeFit1var.RData", "Z:/MDC_JUN__STACK.tif"),
-        functions = c("load", "stack"),
-        package = c("base", "raster"),
-        objectName = c("fireSense_SizeFit", "MDC_JUN__STACK"),
-        stringsAsFactors = FALSE)
-    )
-
-  ## 6 var
     # mySim <- simInit(
     #   times = list(start = 1, end = 2, timeunit = "year"),
     #   modules = list("fireSense_SizePredict"),
     #   paths = list(modulePath = " # replace with empty string instead"),
+    #   params = list(fireSense_SizePredict = list(mapping = c(MDC_JUN = "MDC_JUN__STACK"))),
     #   inputs = data.frame(
-    #     files = c("Z:/fireSense_SizeFit6var.RData", "Z:/MDC_JUN__STACK.tif", "Z:/MDC_JUN__STACK.tif", "Z:/HW_STACK.tif", "Z:/HW_STACK.tif", "Z:/HW_STACK.tif", "Z:/HW_STACK.tif"),
-    #     functions = c("load", "stack", "stack", "stack", "stack", "stack", "stack"),
-    #     package = c("base", "raster", "raster", "raster", "raster", "raster", "raster"),
-    #     objectName = c("fireSense_SizeFit", "MDC_JUN", "MDC_MJ", "HW", "DIST", "O", "WATER"),
+    #     files = c("Z:/fireSense_SizeFit1var.RData", "Z:/MDC_JUN__STACK.tif"),
+    #     functions = c("load", "stack"),
+    #     package = c("base", "raster"),
+    #     objectName = c("fireSense_SizeFit", "MDC_JUN__STACK"),
     #     stringsAsFactors = FALSE)
     # )
+
+  ## 6 var
+    mySim <- simInit(
+      times = list(start = 1, end = 2, timeunit = "year"),
+      modules = list("fireSense_SizePredict"),
+      paths = list(modulePath = " # replace with empty string instead"),
+      inputs = data.frame(
+        files = c("Z:/fireSense_SizeFit6var.RData", "Z:/MDC_JUN__STACK.tif", "Z:/MDC_JUN__STACK.tif", "Z:/HW__STACK.tif", "Z:/HW__STACK.tif", "Z:/HW__STACK.tif", "Z:/HW__STACK.tif"),
+        functions = c("load", "stack", "stack", "stack", "stack", "stack", "stack"),
+        package = c("base", "raster", "raster", "raster", "raster", "raster", "raster"),
+        objectName = c("fireSense_SizeFit", "MDC_JUN", "MDC_MJ", "HW", "DIST", "O", "WATER"),
+        stringsAsFactors = FALSE)
+    )
 
 spades(mySim, debug = FALSE)
 

@@ -151,7 +151,7 @@ fireSense_SizePredictRun <- function(sim) {
     
   } else if (all(unlist(lapply(allVars, function(x) is(envData[[x]], "RasterStack"))))) {
 
-    sim$fireSense_SizePredictBeta <- mget(varsBeta, envir = envir(sim), inherits = FALSE) %>%
+    sim$fireSense_SizePredictBeta <- mget(varsBeta, envir = envData, inherits = FALSE) %>%
       lapply(unstack) %>%
       c(list(FUN = function(...) stack(list(...)), SIMPLIFY = FALSE)) %>%
       do.call("mapply", args = .) %>%
@@ -160,7 +160,7 @@ fireSense_SizePredictRun <- function(sim) {
                 na.rm = TRUE, sim = sim), sim = sim) %>%
       stack
     
-    sim$fireSense_SizePredictTheta <- mget(varsTheta, envir = envir(sim), inherits = FALSE) %>%
+    sim$fireSense_SizePredictTheta <- mget(varsTheta, envir = envData, inherits = FALSE) %>%
       lapply(unstack) %>%
       c(list(FUN = function(...) stack(list(...)), SIMPLIFY = FALSE)) %>%
       do.call("mapply", args = .) %>%
@@ -171,9 +171,9 @@ fireSense_SizePredictRun <- function(sim) {
     
   } else if (all(unlist(lapply(allVars, function(x) is(envData[[x]], "RasterLayer"))))) {
     
-    sim$fireSense_SizePredictBeta <- mget(varsBeta, envir = envir(sim), inherits = FALSE) %>%
+    sim$fireSense_SizePredictBeta <- mget(varsBeta, envir = envData, inherits = FALSE) %>%
       stack %>% predict(model = formulaBeta, fun = fireSense_SizePredictBetaRaster, na.rm = TRUE, sim = sim)
-    sim$fireSense_SizePredictTheta <- mget(varsTheta, envir = envir(sim), inherits = FALSE) %>%
+    sim$fireSense_SizePredictTheta <- mget(varsTheta, envir = envData, inherits = FALSE) %>%
       stack %>% predict(model = formulaTheta, fun = fireSense_SizePredictThetaRaster, na.rm = TRUE, sim = sim)
     
   } else {

@@ -186,9 +186,7 @@ fireSense_SizePredictRun <- function(sim) {
     } else if (any(varsClass)) {
       stop("fireSense_SizePredict> Variables are not of the same class.")
     } else {
-      stop(paste0("fireSense_SizePredict> Variable '", 
-                  allVars[which(varsClass)[1L]],
-                  "' is not a data.frame, a RasterLayer, or a RasterStack."))
+      stop(paste0("fireSense_SizePredict> Variable '", allVars[which(!varsClass)[1L]], "' is not a data.frame, a RasterLayer, or a RasterStack."))
     }
   }
 

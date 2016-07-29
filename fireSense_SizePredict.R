@@ -46,18 +46,21 @@ defineModule(sim, list(
 ## Toolbox: set of functions used internally by the module
   ## Predict functions
     fireSense_SizePredictBetaRaster <- function(model, data, sim) {
-
-      sim$fireSense_SizePredictBeta <- model %>%
+      
+      model %>%
         model.matrix(data) %>%
         `%*%` (sim$fireSense_SizeFit$coefBeta) %>%
         drop %>% sim$fireSense_SizeFit$linkFunBeta$linkinv(.)
+
     }
     
     fireSense_SizePredictThetaRaster <- function(model, data, sim) {
-      sim$fireSense_SizePredictTheta <- model %>%
+
+      model %>%
         model.matrix(data) %>%
         `%*%` (sim$fireSense_SizeFit$coefTheta) %>%
         drop %>% sim$fireSense_SizeFit$linkFunTheta$linkinv(.)
+
     }
     
 ## event types

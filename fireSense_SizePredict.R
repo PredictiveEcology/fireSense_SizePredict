@@ -17,13 +17,15 @@ defineModule(sim, list(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
     defineParameter(name = "data", class = "character", default = NA, desc = "optional. A character vector
       indicating the name(s) of object(s) present in the sim environment, in which to look for variables
-      with which to predict. Objects can be data.frame(s), named list(s) of RasterLayer(s), or named list(s)
-      of RasterStack(s) (for time series) but objects of different classes cannot be mixed. If omitted, or if
-      variables are not found in the data objects(s), they are searched in the sim environment."),
+      with which to predict. Objects can be data.frame(s), RasterLayer(s), RasterStack(s) (for time series), 
+      named list(s) of RasterLayers, or named list(s) of RasterStacks. However, objects of different classes
+      cannot be mixed. For example, variables cannot be searched simultaneously within an object of class
+      data.frame and within an object of class RasterLayer. If omitted, or if variables are not found in the
+      data objects(s), variables are searched in the sim environment."),
     defineParameter(name = "mapping", class = "character", default = NA, desc = "optional. Named character
       vector to map variable names in the formula to those in the data object(s). Names of unmapped
       variables are used directly to look for variables in data object(s) or in the sim environment.")
-  ), #It can be a data.frame or a list of rasters (or stacks if its a time series).
+  ),
   inputObjects = data.frame(
     objectName = "fireSense_SizeFit",
     objectClass = "fireSense_SizeFit",

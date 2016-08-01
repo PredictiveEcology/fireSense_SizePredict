@@ -26,7 +26,7 @@ defineModule(sim, list(
       vector to map variable names in the formula to those in the data objects. Names of unmapped
       variables are used directly to look for variables in data objects or in the sim environment."),
     defineParameter(name = "initialRunTime", class = "numeric", default = NA, desc = "optional. Simulation time at which to start this module. If omitted, start at start(sim)."),
-    defineParameter(name = "intervalRunModule", class = "numeric", default = NA, desc = "optional. Interval between two module runs.")
+    defineParameter(name = "intervalRunModule", class = "numeric", default = NA, desc = "optional. Interval in simulation time units between two module runs.")
   ),
   inputObjects = data.frame(
     objectName = "fireSense_SizeFitted",
@@ -94,10 +94,7 @@ doEvent.fireSense_SizePredict = function(sim, eventTime, eventType, debug = FALS
 ### template initialization
 fireSense_SizePredictInit <- function(sim) {
   
-  sim <- scheduleEvent(sim, 
-                       eventTime = if (is.na(params(sim)$fireSense_SizePredict$initialRunTime)) start(sim) else params(sim)$fireSense_SizePredict$initialRunTime,
-                       "fireSense_SizePredict",
-                       "run")
+  sim <- scheduleEvent(sim, eventTime = if (is.na(p(sim)$initialRunTime)) start(sim) else p(sim)$initialRunTime, "fireSense_SizePredict", "run")
   
   invisible(sim)
 }
@@ -105,28 +102,28 @@ fireSense_SizePredictInit <- function(sim) {
 fireSense_SizePredictRun <- function(sim) {
   
   ## Note: is.na() is temporary and should be replaced by is.null in the future
-  stopifnot(!is.null(params(sim)$fireSense_SizePredict$data[1]))
-  stopifnot(!is.null(params(sim)$fireSense_SizePredict$mapping[1]))
+  stopifnot(!is.null(p(sim)$data[1]))
+  stopifnot(!is.null(p(sim)$mapping[1]))
 
   envData <- new.env(parent = envir(sim))
   on.exit(rm(envData))
   list2env(as.list(envir(sim)), envir = envData)
   
-  if (!is.na(params(sim)$fireSense_SizePredict$data[1]))
-    lapply(params(sim)$fireSense_SizePredict$data, function(x, envData) if (is.list(sim[[x]])) list2env(sim[[x]], envir = envData), envData = envData)
+  if (!is.na(p(sim)$data[1]))
+    lapply(p(sim)$data, function(x, envData) if (is.list(sim[[x]])) list2env(sim[[x]], envir = envData), envData = envData)
 
   termsBeta <- delete.response(terms.formula(formulaBeta <- sim$fireSense_SizeFitted$formula$beta))
   termsTheta <- delete.response(terms.formula(formulaTheta <- sim$fireSense_SizeFitted$formula$theta))
   
   ## Mapping variables names to data
-  if (!is.na(params(sim)$fireSense_SizePredict$mapping[1])) {
+  if (!is.na(p(sim)$mapping[1])) {
 
-    for (i in 1:length(params(sim)$fireSense_SizePredict$mapping)) {
+    for (i in 1:length(p(sim)$mapping)) {
       
-      attr(termsBeta, "term.labels") <- gsub(pattern = names(params(sim)$fireSense_SizePredict$mapping[i]),
-                                             replacement = params(sim)$fireSense_SizePredict$mapping[i], x = attr(termsBeta, "term.labels"))
-      attr(termsTheta, "term.labels") <- gsub(pattern = names(params(sim)$fireSense_SizePredict$mapping[i]),
-                                              replacement = params(sim)$fireSense_SizePredict$mapping[i], x = attr(termsTheta, "term.labels"))
+      attr(termsBeta, "term.labels") <- gsub(pattern = names(p(sim)$mapping[i]),
+                                             replacement = p(sim)$mapping[i], x = attr(termsBeta, "term.labels"))
+      attr(termsTheta, "term.labels") <- gsub(pattern = names(p(sim)$mapping[i]),
+                                              replacement = p(sim)$mapping[i], x = attr(termsTheta, "term.labels"))
     }
 
   }
@@ -190,8 +187,8 @@ fireSense_SizePredictRun <- function(sim) {
     }
   }
 
-  if (!is.na(params(sim)$fireSense_SizePredict$intervalRunModule))
-    sim <- scheduleEvent(sim, time(sim) + params(sim)$fireSense_SizePredict$intervalRunModule, "fireSense_SizePredict", "run")
+  if (!is.na(p(sim)$intervalRunModule))
+    sim <- scheduleEvent(sim, time(sim) + p(sim)$intervalRunModule, "fireSense_SizePredict", "run")
   
   invisible(sim)
 }

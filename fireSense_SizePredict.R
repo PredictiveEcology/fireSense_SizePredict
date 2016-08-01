@@ -92,8 +92,8 @@ doEvent.fireSense_SizePredict = function(sim, eventTime, eventType, debug = FALS
 fireSense_SizePredictInit <- function(sim) {
   
   sim <- scheduleEvent(sim, eventTime = if (is.na(p(sim)$initialRunTime)) start(sim) else p(sim)$initialRunTime, "fireSense_SizePredict", "run")
-  
-  invisible(sim)
+  sim
+
 }
 
 fireSense_SizePredictRun <- function(sim) {

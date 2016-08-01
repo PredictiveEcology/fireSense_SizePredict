@@ -6,7 +6,7 @@ defineModule(sim, list(
   keywords = c("fire size distribution", "tapered Pareto", "fireSense", "statistical model", "predict"),
   authors=c(person("Jean", "Marchal", email="jean.d.marchal@gmail.com", role=c("aut", "cre"))),
   childModules = character(),
-  version = numeric_version("0.0.0.9000"),
+  version = numeric_version("1.2.0.9000"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = NA_character_, # e.g., "year",

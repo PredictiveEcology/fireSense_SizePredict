@@ -29,7 +29,7 @@ defineModule(sim, list(
     defineParameter(name = "intervalRunModule", class = "numeric", default = NA, desc = "optional. Interval between two module runs.")
   ),
   inputObjects = data.frame(
-    objectName = "fireSense_SizeFit",
+    objectName = "fireSense_SizeFitted",
     objectClass = "fireSense_SizeFit",
     sourceURL = "",
     other = NA_character_,
@@ -49,8 +49,8 @@ defineModule(sim, list(
       
       model %>%
         model.matrix(data) %>%
-        `%*%` (sim$fireSense_SizeFit$coefBeta) %>%
-        drop %>% sim$fireSense_SizeFit$linkFunBeta$linkinv(.)
+        `%*%` (sim$fireSense_SizeFitted$coefBeta) %>%
+        drop %>% sim$fireSense_SizeFitted$linkFunBeta$linkinv(.)
 
     }
     
@@ -58,8 +58,8 @@ defineModule(sim, list(
 
       model %>%
         model.matrix(data) %>%
-        `%*%` (sim$fireSense_SizeFit$coefTheta) %>%
-        drop %>% sim$fireSense_SizeFit$linkFunTheta$linkinv(.)
+        `%*%` (sim$fireSense_SizeFitted$coefTheta) %>%
+        drop %>% sim$fireSense_SizeFitted$linkFunTheta$linkinv(.)
 
     }
     
@@ -115,8 +115,8 @@ fireSense_SizePredictRun <- function(sim) {
   if (!is.na(params(sim)$fireSense_SizePredict$data[1]))
     lapply(params(sim)$fireSense_SizePredict$data, function(x, envData) if (is.list(sim[[x]])) list2env(sim[[x]], envir = envData), envData = envData)
 
-  termsBeta <- delete.response(terms.formula(formulaBeta <- sim$fireSense_SizeFit$formula$beta))
-  termsTheta <- delete.response(terms.formula(formulaTheta <- sim$fireSense_SizeFit$formula$theta))
+  termsBeta <- delete.response(terms.formula(formulaBeta <- sim$fireSense_SizeFitted$formula$beta))
+  termsTheta <- delete.response(terms.formula(formulaTheta <- sim$fireSense_SizeFitted$formula$theta))
   
   ## Mapping variables names to data
   if (!is.na(params(sim)$fireSense_SizePredict$mapping[1])) {
@@ -142,12 +142,12 @@ fireSense_SizePredictRun <- function(sim) {
     
     sim$fireSense_SizePredictBeta <- formulaBeta %>%
       model.matrix(envData) %>%
-      `%*%` (sim$fireSense_SizeFit$coefBeta) %>%
-      drop %>% sim$fireSense_SizeFit$linkFunBeta$linkinv(.)
+      `%*%` (sim$fireSense_SizeFitted$coefBeta) %>%
+      drop %>% sim$fireSense_SizeFitted$linkFunBeta$linkinv(.)
     sim$fireSense_SizePredictTheta <- formulaTheta %>%
       model.matrix(envData) %>%
-      `%*%` (sim$fireSense_SizeFit$coefTheta) %>%
-      drop %>% sim$fireSense_SizeFit$linkFunTheta$linkinv(.)
+      `%*%` (sim$fireSense_SizeFitted$coefTheta) %>%
+      drop %>% sim$fireSense_SizeFitted$linkFunTheta$linkinv(.)
     
   } else if (all(unlist(lapply(allVars, function(x) is(envData[[x]], "RasterStack"))))) {
 

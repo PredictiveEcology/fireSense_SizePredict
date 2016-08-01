@@ -68,10 +68,7 @@ defineModule(sim, list(
 
 doEvent.fireSense_SizePredict = function(sim, eventTime, eventType, debug = FALSE) {
   if (eventType == "init") {
-    ### check for more detailed object dependencies:
-    ### (use `checkObject` or similar)
-
-    # do stuff for this event
+    
     sim <- sim$fireSense_SizePredictInit(sim)
 
   } else if (eventType == "run") {

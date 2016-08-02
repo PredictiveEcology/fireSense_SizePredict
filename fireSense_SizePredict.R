@@ -183,5 +183,5 @@ fireSense_SizePredictRun <- function(sim) {
   if (!is.na(p(sim)$intervalRunModule))
     sim <- scheduleEvent(sim, time(sim) + p(sim)$intervalRunModule, "fireSense_SizePredict", "run")
 
-  invisible(sim)
+  sim
 }

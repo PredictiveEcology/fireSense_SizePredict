@@ -15,16 +15,16 @@ defineModule(sim, list(
   reqdPkgs = list("magrittr", "raster"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
-    defineParameter(name = "data", class = "character", default = NA, desc = "optional. A character
-      vector indicating the names of objects present in the sim environment, in which to look for
-      variables with which to predict. Objects can be data.frames, named lists of RasterLayers, or
-      named lists of RasterStacks (for times series). However, objects of different classes cannot
-      be mixed. For example, variables cannot be searched simultaneously within an object of class
-      data.frame and within an object of class RasterLayer. If omitted, or if variables are not
-      found in the data objects, variables are searched in the sim environment."),
-    defineParameter(name = "mapping", class = "character", default = NA, desc = "optional. Named character
-      vector to map variable names in the formula to those in the data objects. Names of unmapped
-      variables are used directly to look for variables in data objects or in the sim environment."),
+    defineParameter(name = "data", class = "character", default = NA, 
+      desc = "optional. A character vector indicating the names of objects present in the sim environment, in which
+              to look for variables with which to predict. Objects can be data.frames, named lists of RasterLayers,
+              or named lists of RasterStacks (for times series). However, objects of different classes cannot be
+              mixed. For example, variables cannot be searched simultaneously within an object of class data.frame
+              and within an object of class RasterLayer. If omitted, or if variables are not found in the data objects,
+              variables are searched in the sim environment."),
+    defineParameter(name = "mapping", class = "character", default = NA, 
+      desc = "optional. Named character vector to map variable names in the formula to those in the data objects.
+              Names of unmapped variables are used directly to look for variables in data objects or in the sim environment."),
     defineParameter(name = "initialRunTime", class = "numeric", default = NA, desc = "optional. Simulation time at which to start this module. If omitted, start at start(sim)."),
     defineParameter(name = "intervalRunModule", class = "numeric", default = NA, desc = "optional. Interval in simulation time units between two module runs.")
   ),

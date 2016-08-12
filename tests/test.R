@@ -2,34 +2,34 @@ library(SpaDES)
 
 ## data.frame
   ## 1 var
-    mySim <- simInit(
-      times = list(start = 1, end = 1, timeunit = "year"),
-      modules = list("fireSense_SizePredict"),
-      paths = list(modulePath = " # replace with empty string instead"),
-      params = list(fireSense_SizePredict = list(data = "dataFireSense_Size")),
-      inputs = data.frame(
-        files = c("Z:/fireSense_SizeFitted1var.rds", "Z:/dataFireSense_Size.rds"),
-        functions = c("readRDS", "readRDS"),
-        package = c("base", "base"),
-        objectName = c("fireSense_SizeFitted", NA),
-        stringsAsFactors = FALSE)
-    )
-
-  ## 6 var
     # mySim <- simInit(
     #   times = list(start = 1, end = 1, timeunit = "year"),
     #   modules = list("fireSense_SizePredict"),
     #   paths = list(modulePath = " # replace with empty string instead"),
-    #   params = list(fireSense_SizePredict = list(data = c("dataFireSense_SizePredict", "dataFireSense_SizePredict2"))),
+    #   params = list(fireSense_SizePredict = list(data = "dataFireSense_Size")),
     #   inputs = data.frame(
-    #     files = c("Z:/fireSense_SizeFitted6var.rds", "Z:/dataFireSense_SizePredict.rds"),
+    #     files = c("Z:/fireSense_SizeFitted1var.rds", "Z:/dataFireSense_Size.rds"),
     #     functions = c("readRDS", "readRDS"),
     #     package = c("base", "base"),
     #     objectName = c("fireSense_SizeFitted", NA),
     #     stringsAsFactors = FALSE)
     # )
-    # mySim$dataFireSense_SizePredict2 <- dplyr::select(mySim$dataFireSense_SizePredict, MDC_JUN)
-    # mySim$dataFireSense_SizePredict <- dplyr::select(mySim$dataFireSense_SizePredict, -MDC_JUN)
+
+  ## 6 var
+    mySim <- simInit(
+      times = list(start = 1, end = 1, timeunit = "year"),
+      modules = list("fireSense_SizePredict"),
+      paths = list(modulePath = " # replace with empty string instead"),
+      params = list(fireSense_SizePredict = list(data = c("dataFireSense_Size", "dataFireSense_Size2"))),
+      inputs = data.frame(
+        files = c("Z:/fireSense_SizeFitted_6var.rds", "Z:/dataFireSense_Size.rds"),
+        functions = c("readRDS", "readRDS"),
+        package = c("base", "base"),
+        objectName = c("fireSense_SizeFitted", NA),
+        stringsAsFactors = FALSE)
+    )
+    mySim$dataFireSense_Size2 <- dplyr::select(mySim$dataFireSense_Size, MDC_JUN)
+    mySim$dataFireSense_Size <- dplyr::select(mySim$dataFireSense_Size, -MDC_JUN)
 
 ## RasterLayer
   ## 1 var

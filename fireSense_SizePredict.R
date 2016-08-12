@@ -52,8 +52,8 @@ defineModule(sim, list(
 
       model %>%
         model.matrix(data) %>%
-        `%*%` (sim$fireSense_SizeFitted$coefBeta) %>%
-        drop %>% sim$fireSense_SizeFitted$linkFunBeta$linkinv(.)
+        `%*%` (sim$fireSense_SizeFitted$coef$beta) %>%
+        drop %>% sim$fireSense_SizeFitted$link$beta$linkinv(.)
 
     }
 
@@ -61,8 +61,8 @@ defineModule(sim, list(
 
       model %>%
         model.matrix(data) %>%
-        `%*%` (sim$fireSense_SizeFitted$coefTheta) %>%
-        drop %>% sim$fireSense_SizeFitted$linkFunTheta$linkinv(.)
+        `%*%` (sim$fireSense_SizeFitted$coef$theta) %>%
+        drop %>% sim$fireSense_SizeFitted$link$theta$linkinv(.)
 
     }
 

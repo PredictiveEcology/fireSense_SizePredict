@@ -17,11 +17,11 @@ defineModule(sim, list(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
     defineParameter(name = "data", class = "character", default = NULL,
       desc = "optional. A character vector indicating the names of objects present in the simList
-      environment, in which to look for variables with which to predict. Objects can be data.frames
-      or named lists of RasterLayers. However, objects of different classes cannot be mixed. For
-      example, variables cannot be searched simultaneously within an object of class data.frame and
-      within an object of class RasterLayer. If omitted, or if variables are not found in the data
-      objects, variables are searched in the simList environment."),
+              environment, in which to look for variables with which to predict. Objects can be data.frames
+              or named lists of RasterLayers. However, objects of different classes cannot be mixed. For
+              example, variables cannot be searched simultaneously within an object of class data.frame and
+              within an object of class RasterLayer. If omitted, or if variables are not found in the data
+              objects, variables are searched in the simList environment."),
     defineParameter(name = "mapping", class = "character", default = NULL,
       desc = "optional. Named character vector to map variable names in the formula to those in
               data objects. Names of unmapped variables are used directly to look for variables in
@@ -71,13 +71,25 @@ defineModule(sim, list(
 
 doEvent.fireSense_SizePredict = function(sim, eventTime, eventType, debug = FALSE) {
   if (eventType == "init") {
-
     sim <- sim$fireSense_SizePredictInit(sim)
 
   } else if (eventType == "run") {
-
     sim <- sim$fireSense_SizePredictRun(sim)
-
+    
+  } else if (eventType == "save") {
+    # ! ----- EDIT BELOW ----- ! #
+    # do stuff for this event
+    
+    # e.g., call your custom functions/methods here
+    # you can define your own methods below this `doEvent` function
+    
+    # schedule future event(s)
+    
+    # e.g.,
+    # sim <- scheduleEvent(sim, time(sim) + increment, "fireSense_SizeFit", "save")
+    
+    # ! ----- STOP EDITING ----- ! #
+    
   } else {
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))

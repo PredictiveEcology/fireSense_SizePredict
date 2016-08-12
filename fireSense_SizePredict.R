@@ -147,32 +147,12 @@ fireSense_SizePredictRun <- function(sim) {
 
     sim$fireSense_SizePredictBeta <- formulaBeta %>%
       model.matrix(envData) %>%
-      `%*%` (sim$fireSense_SizeFitted$coefBeta) %>%
-      drop %>% sim$fireSense_SizeFitted$linkFunBeta$linkinv(.)
+      `%*%` (sim$fireSense_SizeFitted$coef$beta) %>%
+      drop %>% sim$fireSense_SizeFitted$link$beta$linkinv(.)
     sim$fireSense_SizePredictTheta <- formulaTheta %>%
       model.matrix(envData) %>%
-      `%*%` (sim$fireSense_SizeFitted$coefTheta) %>%
-      drop %>% sim$fireSense_SizeFitted$linkFunTheta$linkinv(.)
-
-  } else if (all(unlist(lapply(allVars, function(x) is(envData[[x]], "RasterStack"))))) {
-
-    sim$fireSense_SizePredictBeta <- mget(varsBeta, envir = envData, inherits = FALSE) %>%
-      lapply(unstack) %>%
-      c(list(FUN = function(...) stack(list(...)), SIMPLIFY = FALSE)) %>%
-      do.call("mapply", args = .) %>%
-      lapply(function(x, sim)
-        predict(x, model = formulaBeta, fun = fireSense_SizePredictBetaRaster,
-                na.rm = TRUE, sim = sim), sim = sim) %>%
-      stack
-
-    sim$fireSense_SizePredictTheta <- mget(varsTheta, envir = envData, inherits = FALSE) %>%
-      lapply(unstack) %>%
-      c(list(FUN = function(...) stack(list(...)), SIMPLIFY = FALSE)) %>%
-      do.call("mapply", args = .) %>%
-      lapply(function(x, sim)
-        predict(x, model = formulaTheta, fun = fireSense_SizePredictThetaRaster,
-                na.rm = TRUE, sim = sim), sim = sim) %>%
-      stack
+      `%*%` (sim$fireSense_SizeFitted$coef$theta) %>%
+      drop %>% sim$fireSense_SizeFitted$link$theta$linkinv(.)
 
   } else if (all(unlist(lapply(allVars, function(x) is(envData[[x]], "RasterLayer"))))) {
 
@@ -184,12 +164,12 @@ fireSense_SizePredictRun <- function(sim) {
   } else {
 
     varsExist <- allVars %in% ls(envData)
-    varsClass <- unlist(lapply(allVars, function(x) is.data.frame(envData[[x]]) || is(envData[[x]], "RasterLayer") || is(envData[[x]], "RasterStack")))
+    varsClass <- unlist(lapply(allVars, function(x) is.data.frame(envData[[x]]) || is(envData[[x]], "RasterLayer")))
 
     if (any(!varsExist)) {
       stop(paste0("fireSense_SizePredict> Variable '", allVars[which(!varsExist)[1L]], "' not found."))
     } else if (any(varsClass)) {
-      stop("fireSense_SizePredict> Variables are not of the same class.")
+      stop("fireSense_SizePredict> Data objects are not of the same class (e.g. data.frames).")
     } else {
       stop(paste0("fireSense_SizePredict> Variable '", allVars[which(!varsClass)[1L]], "' is not a data.frame, a RasterLayer, or a RasterStack."))
     }

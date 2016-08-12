@@ -4,7 +4,7 @@ defineModule(sim, list(
   name = "fireSense_SizePredict",
   description = "Make predictions from a model fitted using fireSense_SizeFit.",
   keywords = c("fire size distribution", "tapered Pareto", "fireSense", "statistical model", "predict"),
-  authors=c(person("Jean", "Marchal", email="jean.d.marchal@gmail.com", role=c("aut", "cre"))),
+  authors=c(person("Jean", "Marchal", email = "jean.d.marchal@gmail.com", role = c("aut", "cre"))),
   childModules = character(),
   version = numeric_version("1.2.0.9000"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
@@ -16,18 +16,20 @@ defineModule(sim, list(
   parameters = rbind(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
     defineParameter(name = "data", class = "character", default = NULL,
-      desc = "optional. A character vector indicating the names of objects present in the sim environment, in which
-              to look for variables with which to predict. Objects can be data.frames, named lists of RasterLayers,
-              or named lists of RasterStacks (for times series). However, objects of different classes cannot be
-              mixed. For example, variables cannot be searched simultaneously within an object of class data.frame
-              and within an object of class RasterLayer. If omitted, or if variables are not found in the data objects,
-              variables are searched in the sim environment."),
+      desc = "optional. A character vector indicating the names of objects present in the simList
+      environment, in which to look for variables with which to predict. Objects can be data.frames
+      or named lists of RasterLayers. However, objects of different classes cannot be mixed. For
+      example, variables cannot be searched simultaneously within an object of class data.frame and
+      within an object of class RasterLayer. If omitted, or if variables are not found in the data
+      objects, variables are searched in the simList environment."),
     defineParameter(name = "mapping", class = "character", default = NULL,
-      desc = "optional. Named character vector to map variable names in the formula to those in the data objects.
-              Names of unmapped variables are used directly to look for variables in data objects or in the sim environment."),
+      desc = "optional. Named character vector to map variable names in the formula to those in
+              data objects. Names of unmapped variables are used directly to look for variables in
+              data objects or in the simList environment."),
     defineParameter(name = "initialRunTime", class = "numeric", default = NA,
       desc = "optional. Simulation time at which to start this module. If omitted, start at start(simList)."),
-    defineParameter(name = "intervalRunModule", class = "numeric", default = NA, desc = "optional. Interval in simulation time units between two module runs.")
+    defineParameter(name = "intervalRunModule", class = "numeric", default = NA,
+      desc = "optional. Interval in simulation time units between two runs of this module.")
   ),
   inputObjects = data.frame(
     objectName = "fireSense_SizeFitted",

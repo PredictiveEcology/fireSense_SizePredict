@@ -139,11 +139,11 @@ fireSense_SizePredictRun <- function(sim) {
   formulaBeta <- reformulate(attr(termsBeta, "term.labels"), intercept = attr(termsBeta, "intercept"))
   formulaTheta <- reformulate(attr(termsTheta, "term.labels"), intercept = attr(termsTheta, "intercept"))
 
-  varsBeta <- all.vars(formulaBeta)
-  varsTheta <- all.vars(formulaTheta)
-  allVars <- unique(c(varsBeta, varsTheta))
+  xyBeta <- all.vars(formulaBeta)
+  xyTheta <- all.vars(formulaTheta)
+  allxy <- unique(c(xyBeta, xyTheta))
 
-  if (all(unlist(lapply(allVars, function(x) is.vector(envData[[x]]))))) {
+  if (all(unlist(lapply(allxy, function(x) is.vector(envData[[x]]))))) {
 
     sim$fireSense_SizePredictBeta <- formulaBeta %>%
       model.matrix(envData) %>%
@@ -154,24 +154,24 @@ fireSense_SizePredictRun <- function(sim) {
       `%*%` (sim$fireSense_SizeFitted$coef$theta) %>%
       drop %>% sim$fireSense_SizeFitted$link$theta$linkinv(.)
 
-  } else if (all(unlist(lapply(allVars, function(x) is(envData[[x]], "RasterLayer"))))) {
+  } else if (all(unlist(lapply(allxy, function(x) is(envData[[x]], "RasterLayer"))))) {
 
-    sim$fireSense_SizePredictBeta <- mget(varsBeta, envir = envData, inherits = FALSE) %>%
+    sim$fireSense_SizePredictBeta <- mget(xyBeta, envir = envData, inherits = FALSE) %>%
       stack %>% predict(model = formulaBeta, fun = fireSense_SizePredictBetaRaster, na.rm = TRUE, sim = sim)
-    sim$fireSense_SizePredictTheta <- mget(varsTheta, envir = envData, inherits = FALSE) %>%
+    sim$fireSense_SizePredictTheta <- mget(xyTheta, envir = envData, inherits = FALSE) %>%
       stack %>% predict(model = formulaTheta, fun = fireSense_SizePredictThetaRaster, na.rm = TRUE, sim = sim)
 
   } else {
 
-    varsExist <- allVars %in% ls(envData)
-    varsClass <- unlist(lapply(allVars, function(x) is.data.frame(envData[[x]]) || is(envData[[x]], "RasterLayer")))
+    varsExist <- allxy %in% ls(envData)
+    varsClass <- unlist(lapply(allxy, function(x) is.data.frame(envData[[x]]) || is(envData[[x]], "RasterLayer")))
 
     if (any(!varsExist)) {
-      stop(paste0("fireSense_SizePredict> Variable '", allVars[which(!varsExist)[1L]], "' not found."))
+      stop(paste0("fireSense_SizePredict> Variable '", allxy[which(!varsExist)[1L]], "' not found."))
     } else if (any(varsClass)) {
       stop("fireSense_SizePredict> Data objects are not of the same class (e.g. data.frames).")
     } else {
-      stop(paste0("fireSense_SizePredict> Variable '", allVars[which(!varsClass)[1L]], "' is not a data.frame, a RasterLayer, or a RasterStack."))
+      stop(paste0("fireSense_SizePredict> Variable '", allxy[which(!varsClass)[1L]], "' is not a data.frame or a RasterLayer."))
     }
   }
 
@@ -180,3 +180,15 @@ fireSense_SizePredictRun <- function(sim) {
 
   sim
 }
+
+
+### template for save events
+fireSense_FrequencyPredictSave <- function(sim) {
+  # ! ----- EDIT BELOW ----- ! #
+  # do stuff for this event
+  sim <- saveFiles(sim)
+  
+  # ! ----- STOP EDITING ----- ! #
+  return(invisible(sim))
+}
+

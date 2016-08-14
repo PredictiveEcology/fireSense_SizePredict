@@ -8,7 +8,7 @@ library(SpaDES)
     #   paths = list(modulePath = " # replace with empty string instead"),
     #   params = list(fireSense_SizePredict = list(data = "dataFireSense_Size")),
     #   inputs = data.frame(
-    #     files = c("Z:/fireSense_SizeFitted1var.rds", "Z:/dataFireSense_Size.rds"),
+    #     files = c("Z:/fireSense_SizeFitted_1v.rds", "Z:/dataFireSense_Size.rds"),
     #     functions = c("readRDS", "readRDS"),
     #     package = c("base", "base"),
     #     objectName = c("fireSense_SizeFitted", NA),
@@ -22,7 +22,7 @@ library(SpaDES)
       paths = list(modulePath = " # replace with empty string instead"),
       params = list(fireSense_SizePredict = list(data = c("dataFireSense_Size", "dataFireSense_Size2"))),
       inputs = data.frame(
-        files = c("Z:/fireSense_SizeFitted_6var.rds", "Z:/dataFireSense_Size.rds"),
+        files = c("Z:/fireSense_SizeFitted_6v.rds", "Z:/dataFireSense_Size.rds"),
         functions = c("readRDS", "readRDS"),
         package = c("base", "base"),
         objectName = c("fireSense_SizeFitted", NA),

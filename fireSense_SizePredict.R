@@ -39,8 +39,8 @@ defineModule(sim, list(
     stringsAsFactors = FALSE
   ),
   outputObjects = data.frame(
-    objectName = c("fireSense_SizePredictBeta", "fireSense_SizePredictTheta"),
-    objectClass = c("ANY", "ANY"),
+    objectName = "fireSense_SizePredict",
+    objectClass = "list",
     other = NA_character_,
     stringsAsFactors = FALSE
   )
@@ -145,21 +145,23 @@ fireSense_SizePredictRun <- function(sim) {
 
   if (all(unlist(lapply(allxy, function(x) is.vector(envData[[x]]))))) {
 
-    sim$fireSense_SizePredictBeta <- formulaBeta %>%
-      model.matrix(envData) %>%
-      `%*%` (sim$fireSense_SizeFitted$coef$beta) %>%
-      drop %>% sim$fireSense_SizeFitted$link$beta$linkinv(.)
-    sim$fireSense_SizePredictTheta <- formulaTheta %>%
-      model.matrix(envData) %>%
-      `%*%` (sim$fireSense_SizeFitted$coef$theta) %>%
-      drop %>% sim$fireSense_SizeFitted$link$theta$linkinv(.)
-
+    sim$fireSense_SizePredict <- 
+      list(beta = formulaBeta %>%
+             model.matrix(envData) %>%
+             `%*%` (sim$fireSense_SizeFitted$coef$beta) %>%
+             drop %>% sim$fireSense_SizeFitted$link$beta$linkinv(.),
+           theta = formulaTheta %>%
+             model.matrix(envData) %>%
+             `%*%` (sim$fireSense_SizeFitted$coef$theta) %>%
+             drop %>% sim$fireSense_SizeFitted$link$theta$linkinv(.))
+      
   } else if (all(unlist(lapply(allxy, function(x) is(envData[[x]], "RasterLayer"))))) {
 
-    sim$fireSense_SizePredictBeta <- mget(xyBeta, envir = envData, inherits = FALSE) %>%
-      stack %>% predict(model = formulaBeta, fun = fireSense_SizePredictBetaRaster, na.rm = TRUE, sim = sim)
-    sim$fireSense_SizePredictTheta <- mget(xyTheta, envir = envData, inherits = FALSE) %>%
-      stack %>% predict(model = formulaTheta, fun = fireSense_SizePredictThetaRaster, na.rm = TRUE, sim = sim)
+    sim$fireSense_SizePredict <- 
+      list(beta = mget(xyBeta, envir = envData, inherits = FALSE) %>%
+             stack %>% predict(model = formulaBeta, fun = fireSense_SizePredictBetaRaster, na.rm = TRUE, sim = sim),
+           theta = mget(xyTheta, envir = envData, inherits = FALSE) %>%
+             stack %>% predict(model = formulaTheta, fun = fireSense_SizePredictThetaRaster, na.rm = TRUE, sim = sim))
 
   } else {
 

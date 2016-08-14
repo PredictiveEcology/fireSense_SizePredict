@@ -61,5 +61,5 @@ library(SpaDES)
 
 spades(mySim, debug = FALSE)
 
-# str(list(mySim$fireSense_SizePredictBeta, mySim$fireSense_SizePredictTheta))
-# x11(); Plot(mySim$fireSense_SizePredictBeta); Plot(mySim$fireSense_SizePredictTheta)
+# str(mySim$fireSense_SizePredict)
+# x11(); Plot(mySim$fireSense_SizePredict$beta); Plot(mySim$fireSense_SizePredict$theta)

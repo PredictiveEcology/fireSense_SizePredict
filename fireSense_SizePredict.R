@@ -185,7 +185,7 @@ fireSense_SizePredictRun <- function(sim) {
 
 
 ### template for save events
-fireSense_FrequencyPredictSave <- function(sim) {
+fireSense_SizePredictSave <- function(sim) {
   # ! ----- EDIT BELOW ----- ! #
   # do stuff for this event
   sim <- saveFiles(sim)

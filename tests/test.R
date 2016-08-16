@@ -55,7 +55,7 @@ library(SpaDES)
         files = c("Z:/fireSense_SizeFitted_6v.rds", "Z:/MDC_JUN.tif", "Z:/MDC_JUN.tif", "Z:/HW.tif", "Z:/HW.tif", "Z:/HW.tif", "Z:/HW.tif"),
         functions = c("readRDS", "raster", "raster", "raster", "raster", "raster", "raster"),
         package = c("base", "raster", "raster", "raster", "raster", "raster", "raster"),
-        objectName = c("fireSense_SizeFitted", "MDC_JUN", "MDC_MJ", "HW", "DIST", "O", "WATER"),
+        objectName = c("fireSense_SizeFitted", "MDC_JUN", "MDC_MJ", "HW", "D", "O", "WATER"),
         stringsAsFactors = FALSE)
     )
 

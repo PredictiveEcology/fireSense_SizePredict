@@ -79,4 +79,4 @@ Description of the module outputs.
 # Links to other modules
 
 Describe any anticipated linkages to other modules.
-
+Predictions made using this module can be used to feed the ignition component of a landscape fire model (e.g fireSense).

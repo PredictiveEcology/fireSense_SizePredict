@@ -8,7 +8,7 @@ output:
 ---
 
 # Overview
-Make predictions from a model fitted using fireSense_SizeFit.
+Predict the shape and taper parameters of the tapered Pareto from a model fitted using fireSense_SizeFit.
 
 # Download the module
 ```{r download module, eval = FALSE, echo = TRUE}

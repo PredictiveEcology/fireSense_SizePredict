@@ -25,8 +25,8 @@ downloadModule(moduleName, path = workingDirectory)
 ## Module parameters
 Name|Default|Description
 ----|:-------:|---------------------------------------------------------------------
-`data`|`NULL`|optional. A character vector indicating the names of objects in the `simList` environment in which to look for variables in the model. Data objects can be `data.frame` or named `list` of `RasterLayer` but should all be of one unique class, e.g. `RasterLayer`. If omitted, or if variables are not found in data objects, variables are searched in the `simList` environment.
-`mapping`|`NULL`|optional. Named character vector or `list` mapping some or all variables in the model to those in data objects.
+`data`|`NULL`|optional. A `character vector` indicating the names of objects in the `simList` environment in which to look for variables in the model. Data objects can be `data.frames` or named `list` of `RasterLayers` but should all be of one unique class, e.g. `RasterLayer`. If omitted, or if variables are not found in data objects, variables are searched in the `simList` environment.
+`mapping`|`NULL`|optional. Named `character vector` or `list` mapping some or all variables in the model to those in data objects.
 `initialRunTime`|`start(sim)`|optional. Simulation time at which to start this module. Defaults to simulation start time.
 `intervalRunModule`|`NA`|optional. Interval in simulation time units between two runs of this module.
 

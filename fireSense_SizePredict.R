@@ -172,7 +172,7 @@ fireSense_SizePredictRun <- function(sim) {
     } else if (any(class)) {
       stop("fireSense_SizePredict> Data objects are not of the same class (e.g. data.frames).")
     } else {
-      stop(paste0("fireSense_SizePredict> Variable '", allxy[which(!class)[1L]], "' is not a data.frame or a RasterLayer."))
+      stop(paste0("fireSense_SizePredict> Variable '", allxy[which(!class)[1L]], "' does not match a data.frame's column, a list component, or a RasterLayer."))
     }
   }
 

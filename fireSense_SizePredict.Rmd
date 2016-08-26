@@ -60,7 +60,7 @@ fireSense_SizeFitted <- list(
   formula = list(beta = size_ha ~ weather2,
                  theta = size_ha ~ weather),
   link = list(beta = make.link("log"),
-              theta = make.link("identity"))
+              theta = make.link("identity")),
   coef = list(beta = setNames(c(1, 0.01), c("intercept", "weather2")),
               theta = setNames(c(1, 0.001), c("intercept", "weather")))
 )

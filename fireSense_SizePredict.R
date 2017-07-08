@@ -2,11 +2,11 @@
 # are put into the simList. To use objects and functions, use sim$xxx.
 defineModule(sim, list(
   name = "fireSense_SizePredict",
-  description = "Predict the shape and taper parameters of the tapered Pareto from a model fitted using fireSense_SizeFit.",
+  description = "Predict the shape and taper parameters of the tapered Pareto from a model fitted using the fireSense_SizeFit module.",
   keywords = c("fire size distribution", "tapered Pareto", "fireSense", "statistical model", "predict"),
   authors=c(person("Jean", "Marchal", email = "jean.d.marchal@gmail.com", role = c("aut", "cre"))),
   childModules = character(),
-  version = numeric_version("0.0.1"),
+  version = numeric_version("0.1.0"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = NA_character_, # e.g., "year",
@@ -15,33 +15,44 @@ defineModule(sim, list(
   reqdPkgs = list("magrittr", "raster"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
-    defineParameter(name = "data", class = "character", default = NULL,
-      desc = "optional. A character vector indicating the names of objects in the
-              simList environment in which to look for variables in the model. 
-              Data objects can be data.frames or named lists of RasterLayers but
-              should all be of one unique class, e.g. RasterLayer. If omitted, or
-              if variables are not found in data objects, variables are searched
-              in the simList environment."),
+    defineParameter(name = "data", class = "character", default = "dataFireSense_SizePredict",
+                    desc = "a character vector indicating the names of objects
+                            in the `simList` environment in which to look for
+                            variables in the model. `data` objects can be
+                            data.frames or named lists of RasterLayers, but
+                            data.frames and RasterLayers can not be mixed
+                            together. If omitted, or if variables are not found
+                            in `data` objects, variables are searched in the
+                            `simList` environment."),
     defineParameter(name = "mapping", class = "character, list", default = NULL,
-      desc = "optional. Named character vector or list mapping some or all 
-              variables in the model to those in data objects."),
+                    desc = "optional named vector or list of character strings
+                            mapping one or more variables in the model formula
+                            to those in data objects."),
     defineParameter(name = "initialRunTime", class = "numeric", default = start(sim),
-      desc = "optional. Simulation time at which to start this module. Defaults to simulation start time."),
-    defineParameter(name = "intervalRunModule", class = "numeric", default = NA,
-      desc = "optional. Interval in simulation time units between two runs of this module.")
+                    desc = "when to start this module? By default, the start 
+                            time of the simulation."),
+    defineParameter(name = "intervalRunModule", class = "numeric", default = NA, 
+                    desc = "optional. Interval between two runs of this module,
+                            expressed in units of simulation time.")
   ),
-  inputObjects = data.frame(
-    objectName = "fireSense_SizeFitted",
-    objectClass = "fireSense_SizeFit",
-    sourceURL = "",
-    other = NA_character_,
-    stringsAsFactors = FALSE
+  inputObjects = rbind(
+    expectsInput(
+      objectName = "fireSense_SizeFitted",
+      objectClass = "fireSense_SizeFit",
+      sourceURL = NA_character_,
+      desc = "An object of class fireSense_SizeFit, i.e. created with the fireSense_SizeFit module."
+    ),
+    expectsInput(
+      objectName = "dataFireSense_FrequencyPredict",
+      objectClass = "data.frame, raster",
+      sourceURL = NA_character_,
+      desc = "One or more objects of class data.frame, or named lists of RasterLayer in which to look for variables with which to predict."
+    )
   ),
-  outputObjects = data.frame(
-    objectName = "fireSense_SizePredict",
+  outputObjects = createsOutput(
+    objectName = "fireSense_SizePredicted",
     objectClass = "list",
-    other = NA_character_,
-    stringsAsFactors = FALSE
+    desc = "An object whose class depends on that of the inputs, could be a raster or a vector of type numeric."
   )
 ))
 
@@ -51,8 +62,8 @@ defineModule(sim, list(
 
       model %>%
         model.matrix(data) %>%
-        `%*%` (sim$fireSense_SizeFitted$coef$beta) %>%
-        drop %>% sim$fireSense_SizeFitted$link$beta$linkinv(.)
+        `%*%` (sim[[P(sim)$model]]$coef$beta) %>%
+        drop %>% sim[[P(sim)$model]]$link$beta$linkinv(.)
 
     }
 
@@ -60,8 +71,8 @@ defineModule(sim, list(
 
       model %>%
         model.matrix(data) %>%
-        `%*%` (sim$fireSense_SizeFitted$coef$theta) %>%
-        drop %>% sim$fireSense_SizeFitted$link$theta$linkinv(.)
+        `%*%` (sim[[P(sim)$model]]$coef$theta) %>%
+        drop %>% sim[[P(sim)$model]]$link$theta$linkinv(.)
 
     }
 
@@ -105,32 +116,53 @@ doEvent.fireSense_SizePredict = function(sim, eventTime, eventType, debug = FALS
 ### template initialization
 fireSense_SizePredictInit <- function(sim) {
 
-  sim <- scheduleEvent(sim, eventTime = p(sim)$initialRunTime, "fireSense_SizePredict", "run")
+  sim <- scheduleEvent(sim, eventTime = P(sim)$initialRunTime, current(sim)$moduleName, "run")
   sim
 
 }
 
 fireSense_SizePredictRun <- function(sim) {
 
+  moduleName <- current(sim)$moduleName
+  
   envData <- new.env(parent = envir(sim))
   on.exit(rm(envData))
+
+  # Load data in the container
   list2env(as.list(envir(sim)), envir = envData)
+  
+  lapply(P(sim)$data, function(x, envData) {
+    
+    if (!is.null(sim[[x]])) {
+      
+      if (is.list(sim[[x]]) && !is.null(names(sim[[x]]))) {
+        
+        list2env(sim[[x]], envir = envData)
+        
+      } else stop(paste0(moduleName, "> '", x, "' is not a data.frame or a named list."))
+      
+    }
+    
+  }, envData = envData)
 
-  if (!is.null(p(sim)$data)) ## Handling data arg
-    lapply(p(sim)$data, function(x, envData) if (is.list(sim[[x]])) list2env(sim[[x]], envir = envData), envData = envData)
-
-  termsBeta <- delete.response(terms.formula(formulaBeta <- sim$fireSense_SizeFitted$formula$beta))
-  termsTheta <- delete.response(terms.formula(formulaTheta <- sim$fireSense_SizeFitted$formula$theta))
+  termsBeta <- delete.response(terms.formula(formulaBeta <- sim[[P(sim)$model]]$formula$beta))
+  termsTheta <- delete.response(terms.formula(formulaTheta <- sim[[P(sim)$model]]$formula$theta))
 
   ## Mapping variables names to data
-  if (!is.null(p(sim)$mapping)) {
+  if (!is.null(P(sim)$mapping)) {
 
-    for (i in 1:length(p(sim)$mapping)) {
+    for (i in 1:length(P(sim)$mapping)) {
 
-      attr(termsBeta, "term.labels") <- gsub(pattern = names(p(sim)$mapping[i]),
-                                             replacement = p(sim)$mapping[[i]], x = attr(termsBeta, "term.labels"))
-      attr(termsTheta, "term.labels") <- gsub(pattern = names(p(sim)$mapping[i]),
-                                              replacement = p(sim)$mapping[[i]], x = attr(termsTheta, "term.labels"))
+      attr(termsBeta, "term.labels") <- gsub(
+        pattern = names(P(sim)$mapping[i]),
+        replacement = P(sim)$mapping[[i]],
+        x = attr(termsBeta, "term.labels")
+      )
+      attr(termsTheta, "term.labels") <- gsub(
+        pattern = names(P(sim)$mapping[i]),
+        replacement = P(sim)$mapping[[i]],
+        x = attr(termsTheta, "term.labels")
+      )
     }
 
   }
@@ -144,19 +176,19 @@ fireSense_SizePredictRun <- function(sim) {
 
   if (all(unlist(lapply(allxy, function(x) is.vector(envData[[x]]))))) {
 
-    sim$fireSense_SizePredict <- 
+    sim$fireSense_SizePredicted <- 
       list(beta = formulaBeta %>%
              model.matrix(envData) %>%
-             `%*%` (sim$fireSense_SizeFitted$coef$beta) %>%
-             drop %>% sim$fireSense_SizeFitted$link$beta$linkinv(.),
+             `%*%` (sim[[P(sim)$model]]$coef$beta) %>%
+             drop %>% sim[[P(sim)$model]]$link$beta$linkinv(.),
            theta = formulaTheta %>%
              model.matrix(envData) %>%
-             `%*%` (sim$fireSense_SizeFitted$coef$theta) %>%
-             drop %>% sim$fireSense_SizeFitted$link$theta$linkinv(.))
+             `%*%` (sim[[P(sim)$model]]$coef$theta) %>%
+             drop %>% sim[[P(sim)$model]]$link$theta$linkinv(.))
       
   } else if (all(unlist(lapply(allxy, function(x) is(envData[[x]], "RasterLayer"))))) {
 
-    sim$fireSense_SizePredict <- 
+    sim$fireSense_SizePredicted <- 
       list(beta = mget(xyBeta, envir = envData, inherits = FALSE) %>%
              stack %>% predict(model = formulaBeta, fun = fireSense_SizePredictBetaRaster, na.rm = TRUE, sim = sim),
            theta = mget(xyTheta, envir = envData, inherits = FALSE) %>%
@@ -168,16 +200,16 @@ fireSense_SizePredictRun <- function(sim) {
     class <- unlist(lapply(allxy, function(x) is.data.frame(envData[[x]]) || is(envData[[x]], "RasterLayer")))
 
     if (any(!exist)) {
-      stop(paste0("fireSense_SizePredict> Variable '", allxy[which(!exist)[1L]], "' not found."))
+      stop(paste0(moduleName, "> Variable '", allxy[which(!exist)[1L]], "' not found."))
     } else if (any(class)) {
-      stop("fireSense_SizePredict> Data objects are not of the same class (e.g. data.frames).")
+      stop(paste0(moduleName, "> Data objects are not of the same class (e.g. data.frames)."))
     } else {
-      stop(paste0("fireSense_SizePredict> Variable '", allxy[which(!class)[1L]], "' does not match a data.frame's column, a list component, or a RasterLayer."))
+      stop(paste0(moduleName, "> Variable '", allxy[which(!class)[1L]], "' does not match a data.frame's column, a list element, or a RasterLayer."))
     }
   }
 
-  if (!is.na(p(sim)$intervalRunModule))
-    sim <- scheduleEvent(sim, time(sim) + p(sim)$intervalRunModule, "fireSense_SizePredict", "run")
+  if (!is.na(P(sim)$intervalRunModule))
+    sim <- scheduleEvent(sim, time(sim) + P(sim)$intervalRunModule, moduleName, "run")
 
   sim
 }

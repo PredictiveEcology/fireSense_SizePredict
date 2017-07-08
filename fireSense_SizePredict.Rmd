@@ -1,14 +1,14 @@
 ---
 title: "fireSense_SizePredict"
 author: "Jean Marchal"
-date: "August 2016"
+date: "July 2017"
 output:
   html_document: default
   pdf_document: default
 ---
 
 # Overview
-Predict the shape and taper parameters of the tapered Pareto from a model fitted using fireSense_SizeFit.
+Predict the shape and taper parameters of the tapered Pareto from a model fitted using the fireSense_SizeFit module.
 
 # Download the module
 ```{r download module, eval = FALSE, echo = TRUE}
@@ -16,7 +16,7 @@ library(SpaDES)
 
 moduleName <- "fireSense_SizePredict"
 
-workingDirectory <- tempdir() # Change this to a place you would like to put the module, if desired.
+workingDirectory <- tempdir() # Location where the module will be downloaded
 
 downloadModule(moduleName, path = workingDirectory)
 ```
@@ -24,11 +24,11 @@ downloadModule(moduleName, path = workingDirectory)
 # Usage
 ## Module parameters
 Name|Default|Description
-----|:-------:|---------------------------------------------------------------------
-`data`|`NULL`|optional. A `character vector` indicating the names of objects in the `simList` environment in which to look for variables in the model. Data objects can be `data.frames` or named `list` of `RasterLayers` but should all be of one unique class, e.g. `RasterLayer`. If omitted, or if variables are not found in data objects, variables are searched in the `simList` environment.
-`mapping`|`NULL`|optional. Named `character vector` or `list` mapping some or all variables in the model to those in data objects.
-`initialRunTime`|`start(sim)`|optional. Simulation time at which to start this module. Defaults to simulation start time.
-`intervalRunModule`|`NA`|optional. Interval in simulation time units between two runs of this module.
+----|:-------|---------------------------------------------------------------------
+`data`|`"dataFireSense_SizePredict"`|a character vector indicating the names of objects in the `simList` environment in which to look for variables in the model. `data` objects can be data.frames or named lists of RasterLayers, but data.frames and RasterLayers can not be mixed together. If omitted, or if variables are not found in `data` objects, variables are searched in the `simList` environment.
+`mapping`|`NULL`|optional named vector or list of character strings mapping one or more variables in the model formula to those in `data` objects.
+`initialRunTime`|`start(simList)`|when to start this module? By default, the start time of the simulation.
+`intervalRunModule`|`NA`|optional. Interval between two runs of this module, expressed in units of simulation time.
 
 ## Usage example
 ```{r module usage example, eval = FALSE}
@@ -102,11 +102,11 @@ TODO: Write what is saved. (there is currently nothing saved, but this may chang
 
 # Data dependencies
 ## Input data
-- An object of class `fireSense_SizeFit`, i.e. created with the fireSense_SizeFit module.
-- An or several objects of class `data.frame`, or named lists of `RasterLayer` in which to look for variables with which to predict.
+- **fireSense_SizeFitted**: an object of class `fireSense_SizeFit` created with the fireSense_SizeFit module.
+- **dataFireSense_SizePredict**: One or more data.frames, or named lists of RasterLayers in which to look for variables with which to predict.
 
 ## Output data
-An object whose class depends on those in input:
+- **fireSense_SizePredicted**: an object whose class depends on those in input:
 
 Input object class | Output object class
 :-:|:-:
@@ -115,5 +115,5 @@ Input object class | Output object class
 ||
 
 # Links to other modules
-Predictions made with this module reflect the temporal and spatial heterogeneity found in environmental controls of fire spread. These can be used in simulation models sampling fire sizes from a tapered Pareto distribution, or to derive probability surfaces of spread probabilities (e.g. fireSense_SpreadPredict in association with fireSense_SpreadFit).
+Predictions made with this module reflect the temporal and spatial heterogeneity found in environmental controls of fire spread. These can be used in simulation models sampling final fire sizes from a tapered Pareto distribution, or to derive probability surfaces of spread probabilities (e.g. fireSense_SpreadPredict in association with fireSense_SpreadFit).
 

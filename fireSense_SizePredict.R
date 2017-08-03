@@ -15,14 +15,20 @@ defineModule(sim, list(
   reqdPkgs = list("magrittr", "raster"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
-    defineParameter(name = "data", class = "character", default = "dataFireSense_SizePredict",
-                    desc = "a character vector indicating the names of objects
-                            in the `simList` environment in which to look for
-                            variables in the model. `data` objects can be
-                            data.frames or named lists of RasterLayers, but
-                            data.frames and RasterLayers can not be mixed
-                            together. If omitted, or if variables are not found
-                            in `data` objects, variables are searched in the
+    defineParameter(name = "modelName", class = "character", 
+                    default = "fireSense_SizeFitted",
+                    desc = "name of the object of class fireSense_SizeFit
+                            describing the statistical model used for
+                            predictions."),
+    defineParameter(name = "data", class = "character", 
+                    default = "dataFireSense_SizePredict",
+                    desc = "a character vector indicating the names of objects 
+                            in the `simList` environment in which to look for 
+                            variables present in the model formula. `data`
+                            objects can be data.frames, RasterStacks or
+                            RasterLayers. However, data.frames cannot be mixed
+                            with objects of other classes. If variables are not
+                            found in `data` objects, they are searched in the
                             `simList` environment."),
     defineParameter(name = "mapping", class = "character, list", default = NULL,
                     desc = "optional named vector or list of character strings
@@ -43,16 +49,16 @@ defineModule(sim, list(
       desc = "An object of class fireSense_SizeFit, i.e. created with the fireSense_SizeFit module."
     ),
     expectsInput(
-      objectName = "dataFireSense_FrequencyPredict",
-      objectClass = "data.frame, raster",
+      objectName = "dataFireSense_SizePredict",
+      objectClass = "data.frame, RasterLayer, RasterStack",
       sourceURL = NA_character_,
-      desc = "One or more objects of class data.frame, or named lists of RasterLayer in which to look for variables with which to predict."
+      desc = "One or more objects of class data.frame, RasterLayer or RasterStack in which to look for variables with which to predict."
     )
   ),
   outputObjects = createsOutput(
     objectName = "fireSense_SizePredicted",
-    objectClass = "list",
-    desc = "An object whose class depends on that of the inputs, could be a raster or a vector of type numeric."
+    objectClass = NA_character_,
+    desc = "An object whose class depends on that of the inputs, could be a RasterLayer or a vector of type numeric."
   )
 ))
 
@@ -62,8 +68,8 @@ defineModule(sim, list(
 
       model %>%
         model.matrix(data) %>%
-        `%*%` (sim[[P(sim)$model]]$coef$beta) %>%
-        drop %>% sim[[P(sim)$model]]$link$beta$linkinv(.)
+        `%*%` (sim[[P(sim)$modelName]]$coef$beta) %>%
+        drop %>% sim[[P(sim)$modelName]]$link$beta$linkinv(.)
 
     }
 
@@ -71,8 +77,8 @@ defineModule(sim, list(
 
       model %>%
         model.matrix(data) %>%
-        `%*%` (sim[[P(sim)$model]]$coef$theta) %>%
-        drop %>% sim[[P(sim)$model]]$link$theta$linkinv(.)
+        `%*%` (sim[[P(sim)$modelName]]$coef$theta) %>%
+        drop %>% sim[[P(sim)$modelName]]$link$theta$linkinv(.)
 
     }
 
@@ -124,29 +130,38 @@ fireSense_SizePredictInit <- function(sim) {
 fireSense_SizePredictRun <- function(sim) {
 
   moduleName <- current(sim)$moduleName
-  
+
+  # Create a container to hold the data  
   envData <- new.env(parent = envir(sim))
   on.exit(rm(envData))
 
-  # Load data in the container
+  # Load inputs in the data container
   list2env(as.list(envir(sim)), envir = envData)
   
-  lapply(P(sim)$data, function(x, envData) {
+  for (x in P(sim)$data) {
     
     if (!is.null(sim[[x]])) {
       
-      if (is.list(sim[[x]]) && !is.null(names(sim[[x]]))) {
+      if (is.data.frame(sim[[x]])) {
         
         list2env(sim[[x]], envir = envData)
         
-      } else stop(paste0(moduleName, "> '", x, "' is not a data.frame or a named list."))
+      } else if (is(sim[[x]], "RasterStack")) {
+        
+        list2env(setNames(unstack(sim[[x]]), names(sim[[x]])), envir = envData)
+        
+      } else if (is(sim[[x]], "RasterLayer")) {
+        
+        # Do nothing
+        
+      } else stop(paste0(moduleName, "> '", x, "' is not a data.frame, a RasterLayer or a RasterStack."))
       
     }
     
-  }, envData = envData)
+  }
 
-  termsBeta <- delete.response(terms.formula(formulaBeta <- sim[[P(sim)$model]]$formula$beta))
-  termsTheta <- delete.response(terms.formula(formulaTheta <- sim[[P(sim)$model]]$formula$theta))
+  termsBeta <- delete.response(terms.formula(formulaBeta <- sim[[P(sim)$modelName]]$formula$beta))
+  termsTheta <- delete.response(terms.formula(formulaTheta <- sim[[P(sim)$modelName]]$formula$theta))
 
   ## Mapping variables names to data
   if (!is.null(P(sim)$mapping)) {
@@ -179,12 +194,12 @@ fireSense_SizePredictRun <- function(sim) {
     sim$fireSense_SizePredicted <- 
       list(beta = formulaBeta %>%
              model.matrix(envData) %>%
-             `%*%` (sim[[P(sim)$model]]$coef$beta) %>%
-             drop %>% sim[[P(sim)$model]]$link$beta$linkinv(.),
+             `%*%` (sim[[P(sim)$modelName]]$coef$beta) %>%
+             drop %>% sim[[P(sim)$modelName]]$link$beta$linkinv(.),
            theta = formulaTheta %>%
              model.matrix(envData) %>%
-             `%*%` (sim[[P(sim)$model]]$coef$theta) %>%
-             drop %>% sim[[P(sim)$model]]$link$theta$linkinv(.))
+             `%*%` (sim[[P(sim)$modelName]]$coef$theta) %>%
+             drop %>% sim[[P(sim)$modelName]]$link$theta$linkinv(.))
       
   } else if (all(unlist(lapply(allxy, function(x) is(envData[[x]], "RasterLayer"))))) {
 
@@ -196,15 +211,20 @@ fireSense_SizePredictRun <- function(sim) {
 
   } else {
 
-    exist <- allxy %in% ls(envData)
-    class <- unlist(lapply(allxy, function(x) is.data.frame(envData[[x]]) || is(envData[[x]], "RasterLayer")))
-
-    if (any(!exist)) {
-      stop(paste0(moduleName, "> Variable '", allxy[which(!exist)[1L]], "' not found."))
-    } else if (any(class)) {
-      stop(paste0(moduleName, "> Data objects are not of the same class (e.g. data.frames)."))
+    missing <- !allxy %in% ls(envData, all.names = TRUE)
+    
+    if (s <- sum(missing))
+      stop(paste0(moduleName, "> '", allxy[missing][1L], "'",
+                  if (s > 1) paste0(" (and ", s-1L, " other", if (s>2) "s", ")"),
+                  " not found in data objects nor in the simList environment."))
+    
+    badClass <- !unlist(lapply(allxy, function(x) is.vector(envData[[x]]) || is(envData[[x]], "RasterLayer")))
+    
+    if (any(badClass)) {
+      stop(paste0(moduleName, "> Data objects of class 'data.frame' cannot be mixed with objects of other classes."))
     } else {
-      stop(paste0(moduleName, "> Variable '", allxy[which(!class)[1L]], "' does not match a data.frame's column, a list element, or a RasterLayer."))
+      stop(paste0(moduleName, "> '", paste(allxy[which(!badClass)], collapse = "', '"),
+                  "' does not match a data.frame's column, a RasterLayer or a RasterStack's layer."))
     }
   }
 

@@ -1,7 +1,7 @@
 ---
 title: "fireSense_SizePredict"
 author: "Jean Marchal"
-date: "July 2017"
+date: "August 2017"
 output:
   html_document: default
   pdf_document: default
@@ -16,30 +16,36 @@ library(SpaDES)
 
 moduleName <- "fireSense_SizePredict"
 
-workingDirectory <- tempdir() # Location where the module will be downloaded
+spadesModulesDirectory <- tempdir() # Location where the module will be downloaded
 
-downloadModule(moduleName, path = workingDirectory)
+downloadModule(moduleName, path = spadesModulesDirectory)
 ```
 
 # Usage
 ## Module parameters
 Name|Default|Description
 ----|:-------|---------------------------------------------------------------------
-`data`|`"dataFireSense_SizePredict"`|a character vector indicating the names of objects in the `simList` environment in which to look for variables in the model. `data` objects can be data.frames or named lists of RasterLayers, but data.frames and RasterLayers can not be mixed together. If omitted, or if variables are not found in `data` objects, variables are searched in the `simList` environment.
+`modelName`|`"fireSense_SizeFitted"`|name of the object of class fireSense_SizeFit describing the statistical model used for predictions.
+`data`|`"dataFireSense_SizePredict"`|a character vector indicating the names of objects in the `simList` environment in which to look for variables present in the model formula. `data` objects can be data.frames, RasterStacks or RasterLayers. However, data.frames cannot be mixed with objects of other classes. If variables are not found in `data` objects, they are searched in the `simList` environment.
 `mapping`|`NULL`|optional named vector or list of character strings mapping one or more variables in the model formula to those in `data` objects.
 `initialRunTime`|`start(simList)`|when to start this module? By default, the start time of the simulation.
 `intervalRunModule`|`NA`|optional. Interval between two runs of this module, expressed in units of simulation time.
 
 ## Usage example
 ```{r module usage example, eval = FALSE}
-library(SpaDES)
-library(PtProcess)
-
-# Packages required by the module
 library(magrittr)
+library(PtProcess)
 library(raster)
+library(SpaDES)
 
 set.seed(1)
+
+# Define simulation parameters
+times <- list(start = 1, end = 1, timeunit = "year")
+modules <- list("fireSense_SizePredict")
+paths <- list(
+  modulePath = spadesModulesDirectory
+)
 
 # Create random weather and fire size data
   # data.frame
@@ -47,14 +53,14 @@ set.seed(1)
     weather = rnorm(1000, 150, 30),
     size_ha = rtappareto(1000, .3, 1e4, a = 1)
   )
-
+  
   # raster
   nx <- ny <- 100L
   size_ha <- raster(nrows = ny, ncols = nx, xmn = -nx/2, xmx = nx/2, ymn = -ny/2, ymx = ny/2) %>%
     setValues(rtappareto(ncell(.), .3, 1e4, a = 1))
   weather <- gaussMap(size_ha, scale = 300, var = 0.03, speedup = nx/5e2, inMemory = TRUE)
-  dataObject <- list(weather = weather, size_ha = size_ha)
-  
+  dataObject <- stack(weather, size_ha) %>% setNames(c("weather", "size_ha"))
+
 # Create a typical output of fireSense_SizeFit
 fireSense_SizeFitted <- list(
   formula = list(beta = size_ha ~ weather2,
@@ -66,29 +72,31 @@ fireSense_SizeFitted <- list(
 )
 class(fireSense_SizeFitted) <- "fireSense_SizeFit"
 
-#outputDir <- file.path(tempdir(), "outputs")
-times <- list(start = 1, end = 1, timeunit = "year")
+# Define module parameters
 parameters <- list(
   fireSense_SizePredict = list(
-    mapping = list(weather2 = "weather"), # One can use mapping to map variables in the 
-                                          # formula of the fitted object to those in data.
-                                          # Here weather2 (formula) is mapped to weather (data).
+    mapping = list(weather2 = "weather"), # One can use mapping to map variables
+                                          # in the formula of the fitted object
+                                          # to those in data. Here weather2 
+                                          # (formula) is mapped to weather (data).
     data = "dataObject"
   )
 )
 
-modules <- list("fireSense_SizePredict")
-objects <- c("dataObject", "fireSense_SizeFitted") # Pass objects found in the global environment to the simList environment
-paths <- list(
-  # cachePath = file.path(outputDir, "cache"),
-  modulePath = file.path("~/Documents/GitHub/McIntire-lab/modulesPrivate/") ## TODO: change this to tempdir()
-  # inputPath = inputDir,
-  # outputPath = outputDir
-)
- 
-mySim <- simInit(times = times, params = parameters, modules = modules, objects = objects, paths = paths)
+# Objects to pass from the global environment to the simList environment
+objects <- c("dataObject", "fireSense_SizeFitted")
 
-spades(mySim)
+# Create the simList
+sim <- simInit(
+  times = times, 
+  params = parameters, 
+  modules = modules, 
+  objects = objects, 
+  paths = paths
+)
+
+sim <- spades(sim)
+sim$fireSense_SizePredicted
 ```
 
 # Events
@@ -103,7 +111,7 @@ TODO: Write what is saved. (there is currently nothing saved, but this may chang
 # Data dependencies
 ## Input data
 - **fireSense_SizeFitted**: an object of class `fireSense_SizeFit` created with the fireSense_SizeFit module.
-- **dataFireSense_SizePredict**: One or more data.frames, or named lists of RasterLayers in which to look for variables with which to predict.
+- **dataFireSense_SizePredict**: One or more data.frames, RasterLayers or RasterStacks in which to look for variables with which to predict.
 
 ## Output data
 - **fireSense_SizePredicted**: an object whose class depends on those in input:
@@ -111,7 +119,7 @@ TODO: Write what is saved. (there is currently nothing saved, but this may chang
 Input object class | Output object class
 :-:|:-:
 `data.frame` | `numeric`
-`RasterLayer` | `RasterLayer`
+`RasterLayer`<br>`RasterStack` | `RasterLayer`
 ||
 
 # Links to other modules

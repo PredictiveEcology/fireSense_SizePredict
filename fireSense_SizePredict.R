@@ -2,7 +2,11 @@
 # are put into the simList. To use objects and functions, use sim$xxx.
 defineModule(sim, list(
   name = "fireSense_SizePredict",
-  description = "Predict the shape and taper parameters of the tapered Pareto from a model fitted using the fireSense_SizeFit module.",
+  description = "Predicts two parameters of the tapered Pareto distribution,
+                 beta and theta, using a model fitted with the fireSense_SizeFit
+                 module. beta controls the rate of frequency decrease as the
+                 fire size increases, and theta governs the location of the
+                 exponential taper.",
   keywords = c("fire size distribution", "tapered Pareto", "fireSense", "statistical model", "predict"),
   authors=c(person("Jean", "Marchal", email = "jean.d.marchal@gmail.com", role = c("aut", "cre"))),
   childModules = character(),
@@ -63,13 +67,28 @@ defineModule(sim, list(
 ))
 
 ## Toolbox: set of functions used internally by the module
+  ## Create an inverse-link function based on the link
+    linkinv <- function(link) {
+      
+      if (link == "log") {
+        
+        return(base::exp)
+        
+      } else if (link == "identity") {
+        
+        return(base::identity)
+        
+      }
+      
+    }
+
   ## Predict functions
     fireSense_SizePredictBetaRaster <- function(model, data, sim) {
 
       model %>%
         model.matrix(data) %>%
         `%*%` (sim[[P(sim)$modelName]]$coef$beta) %>%
-        drop %>% sim[[P(sim)$modelName]]$link$beta$linkinv(.)
+        drop %>% link$beta(.)
 
     }
 
@@ -78,7 +97,7 @@ defineModule(sim, list(
       model %>%
         model.matrix(data) %>%
         `%*%` (sim[[P(sim)$modelName]]$coef$theta) %>%
-        drop %>% sim[[P(sim)$modelName]]$link$theta$linkinv(.)
+        drop %>% link$theta(.)
 
     }
 
@@ -86,30 +105,28 @@ defineModule(sim, list(
 #   - type `init` is required for initialiazation
 
 doEvent.fireSense_SizePredict = function(sim, eventTime, eventType, debug = FALSE) {
-  if (eventType == "init") {
-    sim <- sim$fireSense_SizePredictInit(sim)
 
-  } else if (eventType == "run") {
-    sim <- sim$fireSense_SizePredictRun(sim)
-    
-  } else if (eventType == "save") {
-    # ! ----- EDIT BELOW ----- ! #
-    # do stuff for this event
-    
-    # e.g., call your custom functions/methods here
-    # you can define your own methods below this `doEvent` function
-    
-    # schedule future event(s)
-    
-    # e.g.,
-    # sim <- scheduleEvent(sim, time(sim) + increment, "fireSense_SizeFit", "save")
-    
-    # ! ----- STOP EDITING ----- ! #
-    
-  } else {
+  switch(
+    eventType,
+    init = { sim <- sim$fireSense_SizePredictInit(sim) },
+    run = { sim <- sim$fireSense_SizePredictRun(sim) },
+    save = {
+      # ! ----- EDIT BELOW ----- ! #
+      # do stuff for this event
+      
+      # e.g., call your custom functions/methods here
+      # you can define your own methods below this `doEvent` function
+      
+      # schedule future event(s)
+      
+      # e.g.,
+      # sim <- scheduleEvent(sim, time(sim) + increment, "fireSense_SizeFit", "save")
+      
+      # ! ----- STOP EDITING ----- ! #
+    },
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
-  }
+  )
 
   invisible(sim)
 }
@@ -122,8 +139,10 @@ doEvent.fireSense_SizePredict = function(sim, eventTime, eventType, debug = FALS
 ### template initialization
 fireSense_SizePredictInit <- function(sim) {
 
+  stopifnot(is(sim[[P(sim)$modelName]], "fireSense_SizeFit"))
+
   sim <- scheduleEvent(sim, eventTime = P(sim)$initialRunTime, current(sim)$moduleName, "run")
-  sim
+  invisible(sim)
 
 }
 
@@ -159,7 +178,7 @@ fireSense_SizePredictRun <- function(sim) {
     }
     
   }
-
+  
   termsBeta <- delete.response(terms.formula(formulaBeta <- sim[[P(sim)$modelName]]$formula$beta))
   termsTheta <- delete.response(terms.formula(formulaTheta <- sim[[P(sim)$modelName]]$formula$theta))
 
@@ -168,15 +187,15 @@ fireSense_SizePredictRun <- function(sim) {
 
     for (i in 1:length(P(sim)$mapping)) {
 
-      attr(termsBeta, "term.labels") <- gsub(
+      attr(termsBeta, "term.labels") %<>% gsub(
         pattern = names(P(sim)$mapping[i]),
         replacement = P(sim)$mapping[[i]],
-        x = attr(termsBeta, "term.labels")
+        x = .
       )
-      attr(termsTheta, "term.labels") <- gsub(
+      attr(termsTheta, "term.labels") %<>% gsub(
         pattern = names(P(sim)$mapping[i]),
         replacement = P(sim)$mapping[[i]],
-        x = attr(termsTheta, "term.labels")
+        x = .
       )
     }
 
@@ -189,25 +208,31 @@ fireSense_SizePredictRun <- function(sim) {
   xyTheta <- all.vars(formulaTheta)
   allxy <- unique(c(xyBeta, xyTheta))
 
+  # Create linkinv function
+  link <- list(beta = linkinv(sim[[P(sim)$modelName]]$link$beta),
+               theta = linkinv(sim[[P(sim)$modelName]]$link$theta))
+  
   if (all(unlist(lapply(allxy, function(x) is.vector(envData[[x]]))))) {
-
-    sim$fireSense_SizePredicted <- 
+    
+    sim$fireSense_SizePredicted <- c(sim$fireSense_SizePredicted,
       list(beta = formulaBeta %>%
              model.matrix(envData) %>%
              `%*%` (sim[[P(sim)$modelName]]$coef$beta) %>%
-             drop %>% sim[[P(sim)$modelName]]$link$beta$linkinv(.),
+             drop %>% link$beta(.),
            theta = formulaTheta %>%
              model.matrix(envData) %>%
              `%*%` (sim[[P(sim)$modelName]]$coef$theta) %>%
-             drop %>% sim[[P(sim)$modelName]]$link$theta$linkinv(.))
+             drop %>% link$theta(.))
+    )
       
   } else if (all(unlist(lapply(allxy, function(x) is(envData[[x]], "RasterLayer"))))) {
 
-    sim$fireSense_SizePredicted <- 
+    sim$fireSense_SizePredicted <- c(sim$fireSense_SizePredicted,
       list(beta = mget(xyBeta, envir = envData, inherits = FALSE) %>%
              stack %>% predict(model = formulaBeta, fun = fireSense_SizePredictBetaRaster, na.rm = TRUE, sim = sim),
            theta = mget(xyTheta, envir = envData, inherits = FALSE) %>%
              stack %>% predict(model = formulaTheta, fun = fireSense_SizePredictThetaRaster, na.rm = TRUE, sim = sim))
+    )
 
   } else {
 
@@ -218,7 +243,7 @@ fireSense_SizePredictRun <- function(sim) {
                   if (s > 1) paste0(" (and ", s-1L, " other", if (s>2) "s", ")"),
                   " not found in data objects nor in the simList environment."))
     
-    badClass <- !unlist(lapply(allxy, function(x) is.vector(envData[[x]]) || is(envData[[x]], "RasterLayer")))
+    badClass <- unlist(lapply(allxy, function(x) is.vector(envData[[x]]) || is(envData[[x]], "RasterLayer")))
     
     if (any(badClass)) {
       stop(paste0(moduleName, "> Data objects of class 'data.frame' cannot be mixed with objects of other classes."))
@@ -231,17 +256,6 @@ fireSense_SizePredictRun <- function(sim) {
   if (!is.na(P(sim)$intervalRunModule))
     sim <- scheduleEvent(sim, time(sim) + P(sim)$intervalRunModule, moduleName, "run")
 
-  sim
-}
-
-
-### template for save events
-fireSense_SizePredictSave <- function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # do stuff for this event
-  sim <- saveFiles(sim)
-  
-  # ! ----- STOP EDITING ----- ! #
-  return(invisible(sim))
+  invisible(sim)
 }
 

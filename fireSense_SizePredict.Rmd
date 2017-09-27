@@ -1,6 +1,6 @@
 ---
 title: "fireSense_SizePredict"
-author: "Jean Marchal"
+author: "Jean Marchal (jean.d.marchal@gmail.com)"
 date: "August 2017"
 output:
   html_document: default
@@ -8,7 +8,7 @@ output:
 ---
 
 # Overview
-Predict the shape and taper parameters of the tapered Pareto from a model fitted using the fireSense_SizeFit module.
+Predicts two parameters of the tapered Pareto distribution, \beta and \theta, using a model fitted with the fireSense_SizeFit module. \beta controls the rate of frequency decrease as the fire size increases, and \theta governs the location of the exponential taper.
 
 # Download the module
 ```{r download module, eval = FALSE, echo = TRUE}

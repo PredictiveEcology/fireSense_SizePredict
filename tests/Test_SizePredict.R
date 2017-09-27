@@ -9,7 +9,7 @@ set.seed(1)
 times <- list(start = 1, end = 1, timeunit = "year")
 modules <- list("fireSense_SizePredict")
 paths <- list(
-  modulePath = file.path("~/Documents/GitHub/McIntire-lab/modulesPrivate/")
+  modulePath = "~/Documents/GitHub/McIntire-lab/modulesPrivate/"
 )
 
 # Create random weather and fire size data

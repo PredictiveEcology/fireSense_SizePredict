@@ -8,7 +8,7 @@ output:
 ---
 
 # Overview
-Predicts two parameters of the tapered Pareto distribution, \beta and \theta, using a model fitted with the fireSense_SizeFit module. \beta controls the rate of frequency decrease as the fire size increases, and \theta governs the location of the exponential taper.
+Predicts two parameters of the tapered Pareto distribution, $\beta$ and $\theta$, using a model fitted with the fireSense_SizeFit module. $\beta$ controls the rate of frequency decrease as the fire size increases, and $\theta$ governs the location of the exponential taper.
 
 # Download the module
 ```{r download module, eval = FALSE, echo = TRUE}
@@ -38,7 +38,7 @@ library(PtProcess)
 library(raster)
 library(SpaDES)
 
-set.seed(1)
+set.seed(123)
 
 # Define simulation parameters
 times <- list(start = 1, end = 1, timeunit = "year")
@@ -104,9 +104,6 @@ Events are scheduled as follows:
 
 - Module initiation
 - Make predictions
-
-## Saving
-TODO: Write what is saved. (there is currently nothing saved, but this may change in the future)
 
 # Data dependencies
 ## Input data

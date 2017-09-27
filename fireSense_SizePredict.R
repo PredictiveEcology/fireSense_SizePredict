@@ -10,7 +10,7 @@ defineModule(sim, list(
   keywords = c("fire size distribution", "tapered Pareto", "fireSense", "statistical model", "predict"),
   authors=c(person("Jean", "Marchal", email = "jean.d.marchal@gmail.com", role = c("aut", "cre"))),
   childModules = character(),
-  version = numeric_version("0.1.0"),
+  version = list(SpaDES.core = "0.1.0", fireSense_SizePredict = "0.0.1"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = NA_character_, # e.g., "year",
@@ -43,7 +43,8 @@ defineModule(sim, list(
                             time of the simulation."),
     defineParameter(name = "intervalRunModule", class = "numeric", default = NA, 
                     desc = "optional. Interval between two runs of this module,
-                            expressed in units of simulation time.")
+                            expressed in units of simulation time."),
+    defineParameter(".useCache", "numeric", FALSE, NA, NA, "Should this entire module be run with caching activated? This is generally intended for data-type modules, where stochasticity and time are not relevant")
   ),
   inputObjects = rbind(
     expectsInput(
@@ -67,28 +68,13 @@ defineModule(sim, list(
 ))
 
 ## Toolbox: set of functions used internally by the module
-  ## Create an inverse-link function based on the link
-    linkinv <- function(link) {
-      
-      if (link == "log") {
-        
-        return(base::exp)
-        
-      } else if (link == "identity") {
-        
-        return(base::identity)
-        
-      }
-      
-    }
-
   ## Predict functions
     fireSense_SizePredictBetaRaster <- function(model, data, sim) {
 
       model %>%
         model.matrix(data) %>%
         `%*%` (sim[[P(sim)$modelName]]$coef$beta) %>%
-        drop %>% link$beta(.)
+        drop %>% sim[[P(sim)$modelName]]$link$beta$linkinv(.)
 
     }
 
@@ -97,7 +83,7 @@ defineModule(sim, list(
       model %>%
         model.matrix(data) %>%
         `%*%` (sim[[P(sim)$modelName]]$coef$theta) %>%
-        drop %>% link$theta(.)
+        drop %>% sim[[P(sim)$modelName]]$link$theta$linkinv(.)
 
     }
 
@@ -149,6 +135,8 @@ fireSense_SizePredictInit <- function(sim) {
 fireSense_SizePredictRun <- function(sim) {
 
   moduleName <- current(sim)$moduleName
+  currentTime <- time(sim, timeunit(sim))
+  endTime <- end(sim, timeunit(sim))
 
   # Create a container to hold the data  
   envData <- new.env(parent = envir(sim))
@@ -208,31 +196,27 @@ fireSense_SizePredictRun <- function(sim) {
   xyTheta <- all.vars(formulaTheta)
   allxy <- unique(c(xyBeta, xyTheta))
 
-  # Create linkinv function
-  link <- list(beta = linkinv(sim[[P(sim)$modelName]]$link$beta),
-               theta = linkinv(sim[[P(sim)$modelName]]$link$theta))
-  
   if (all(unlist(lapply(allxy, function(x) is.vector(envData[[x]]))))) {
     
-    sim$fireSense_SizePredicted <- c(sim$fireSense_SizePredicted,
+    sim$fireSense_SizePredicted[as.character(currentTime)] <-
       list(beta = formulaBeta %>%
              model.matrix(envData) %>%
              `%*%` (sim[[P(sim)$modelName]]$coef$beta) %>%
-             drop %>% link$beta(.),
+             drop %>% sim[[P(sim)$modelName]]$link$beta$linkinv(.),
            theta = formulaTheta %>%
              model.matrix(envData) %>%
              `%*%` (sim[[P(sim)$modelName]]$coef$theta) %>%
-             drop %>% link$theta(.))
-    )
+             drop %>% sim[[P(sim)$modelName]]$link$theta$linkinv(.)
+      )
       
   } else if (all(unlist(lapply(allxy, function(x) is(envData[[x]], "RasterLayer"))))) {
 
-    sim$fireSense_SizePredicted <- c(sim$fireSense_SizePredicted,
+    sim$fireSense_SizePredicted[as.character(currentTime)] <-
       list(beta = mget(xyBeta, envir = envData, inherits = FALSE) %>%
              stack %>% predict(model = formulaBeta, fun = fireSense_SizePredictBetaRaster, na.rm = TRUE, sim = sim),
            theta = mget(xyTheta, envir = envData, inherits = FALSE) %>%
-             stack %>% predict(model = formulaTheta, fun = fireSense_SizePredictThetaRaster, na.rm = TRUE, sim = sim))
-    )
+             stack %>% predict(model = formulaTheta, fun = fireSense_SizePredictThetaRaster, na.rm = TRUE, sim = sim)
+      )
 
   } else {
 
@@ -253,8 +237,8 @@ fireSense_SizePredictRun <- function(sim) {
     }
   }
 
-  if (!is.na(P(sim)$intervalRunModule))
-    sim <- scheduleEvent(sim, time(sim) + P(sim)$intervalRunModule, moduleName, "run")
+  if (!is.na(P(sim)$intervalRunModule) && (currentTime + P(sim)$intervalRunModule) <= endTime) # Assumes time only moves forward
+    sim <- scheduleEvent(sim, currentTime + P(sim)$intervalRunModule, moduleName, "run")
 
   invisible(sim)
 }

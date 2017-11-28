@@ -69,29 +69,27 @@ defineModule(sim, list(
 
 ## Toolbox: set of functions used internally by the module
   ## Predict functions
-    fireSense_SizePredictBetaRaster <- function(model, data, sim) {
-
+    fireSense_SizePredictBetaRaster <- function(model, data, sim)
+    {
       model %>%
         model.matrix(data) %>%
         `%*%` (sim[[P(sim)$modelName]]$coef$beta) %>%
         drop %>% sim[[P(sim)$modelName]]$link$beta$linkinv(.)
-
     }
 
-    fireSense_SizePredictThetaRaster <- function(model, data, sim) {
-
+    fireSense_SizePredictThetaRaster <- function(model, data, sim) 
+    {
       model %>%
         model.matrix(data) %>%
         `%*%` (sim[[P(sim)$modelName]]$coef$theta) %>%
         drop %>% sim[[P(sim)$modelName]]$link$theta$linkinv(.)
-
     }
 
 ## event types
 #   - type `init` is required for initialiazation
 
-doEvent.fireSense_SizePredict = function(sim, eventTime, eventType, debug = FALSE) {
-
+doEvent.fireSense_SizePredict = function(sim, eventTime, eventType, debug = FALSE) 
+{
   switch(
     eventType,
     init = { sim <- sim$fireSense_SizePredictInit(sim) },
@@ -123,17 +121,16 @@ doEvent.fireSense_SizePredict = function(sim, eventTime, eventType, debug = FALS
 #   - keep event functions short and clean, modularize by calling subroutines from section below.
 
 ### template initialization
-fireSense_SizePredictInit <- function(sim) {
-
-  stopifnot(is(sim[[P(sim)$modelName]], "fireSense_SizeFit"))
-
+fireSense_SizePredictInit <- function(sim)
+{
   sim <- scheduleEvent(sim, eventTime = P(sim)$initialRunTime, current(sim)$moduleName, "run")
   invisible(sim)
-
 }
 
-fireSense_SizePredictRun <- function(sim) {
-
+fireSense_SizePredictRun <- function(sim)
+{
+  stopifnot(is(sim[[P(sim)$modelName]], "fireSense_SizeFit"))
+  
   moduleName <- current(sim)$moduleName
   currentTime <- time(sim, timeunit(sim))
   endTime <- end(sim, timeunit(sim))
@@ -145,36 +142,33 @@ fireSense_SizePredictRun <- function(sim) {
   # Load inputs in the data container
   list2env(as.list(envir(sim)), envir = envData)
   
-  for (x in P(sim)$data) {
-    
-    if (!is.null(sim[[x]])) {
-      
-      if (is.data.frame(sim[[x]])) {
-        
+  for (x in P(sim)$data)
+  {
+    if (!is.null(sim[[x]]))
+    {
+      if (is.data.frame(sim[[x]]))
+      {
         list2env(sim[[x]], envir = envData)
-        
-      } else if (is(sim[[x]], "RasterStack")) {
-        
+      } 
+      else if (is(sim[[x]], "RasterStack")) 
+      {
         list2env(setNames(unstack(sim[[x]]), names(sim[[x]])), envir = envData)
-        
-      } else if (is(sim[[x]], "RasterLayer")) {
-        
+      } 
+      else if (is(sim[[x]], "RasterLayer"))
+      {
         # Do nothing
-        
       } else stop(paste0(moduleName, "> '", x, "' is not a data.frame, a RasterLayer or a RasterStack."))
-      
     }
-    
   }
   
   termsBeta <- delete.response(terms.formula(formulaBeta <- sim[[P(sim)$modelName]]$formula$beta))
   termsTheta <- delete.response(terms.formula(formulaTheta <- sim[[P(sim)$modelName]]$formula$theta))
 
   ## Mapping variables names to data
-  if (!is.null(P(sim)$mapping)) {
-
-    for (i in 1:length(P(sim)$mapping)) {
-
+  if (!is.null(P(sim)$mapping)) 
+  {
+    for (i in 1:length(P(sim)$mapping)) 
+    {
       attr(termsBeta, "term.labels") %<>% gsub(
         pattern = names(P(sim)$mapping[i]),
         replacement = P(sim)$mapping[[i]],
@@ -186,7 +180,6 @@ fireSense_SizePredictRun <- function(sim) {
         x = .
       )
     }
-
   }
 
   formulaBeta <- reformulate(attr(termsBeta, "term.labels"), intercept = attr(termsBeta, "intercept"))
@@ -196,9 +189,9 @@ fireSense_SizePredictRun <- function(sim) {
   xyTheta <- all.vars(formulaTheta)
   allxy <- unique(c(xyBeta, xyTheta))
 
-  if (all(unlist(lapply(allxy, function(x) is.vector(envData[[x]]))))) {
-    
     sim$fireSense_SizePredicted[as.character(currentTime)] <-
+  if (all(unlist(lapply(allxy, function(x) is.vector(envData[[x]])))))
+  {
       list(beta = formulaBeta %>%
              model.matrix(envData) %>%
              `%*%` (sim[[P(sim)$modelName]]$coef$beta) %>%
@@ -208,18 +201,19 @@ fireSense_SizePredictRun <- function(sim) {
              `%*%` (sim[[P(sim)$modelName]]$coef$theta) %>%
              drop %>% sim[[P(sim)$modelName]]$link$theta$linkinv(.)
       )
-      
-  } else if (all(unlist(lapply(allxy, function(x) is(envData[[x]], "RasterLayer"))))) {
-
     sim$fireSense_SizePredicted[as.character(currentTime)] <-
+  } 
+  else if (all(unlist(lapply(allxy, function(x) is(envData[[x]], "RasterLayer"))))) 
+  {
       list(beta = mget(xyBeta, envir = envData, inherits = FALSE) %>%
              stack %>% predict(model = formulaBeta, fun = fireSense_SizePredictBetaRaster, na.rm = TRUE, sim = sim),
            theta = mget(xyTheta, envir = envData, inherits = FALSE) %>%
              stack %>% predict(model = formulaTheta, fun = fireSense_SizePredictThetaRaster, na.rm = TRUE, sim = sim)
       )
 
-  } else {
-
+  } 
+  else 
+  {
     missing <- !allxy %in% ls(envData, all.names = TRUE)
     
     if (s <- sum(missing))
@@ -229,9 +223,12 @@ fireSense_SizePredictRun <- function(sim) {
     
     badClass <- unlist(lapply(allxy, function(x) is.vector(envData[[x]]) || is(envData[[x]], "RasterLayer")))
     
-    if (any(badClass)) {
+    if (any(badClass)) 
+    {
       stop(paste0(moduleName, "> Data objects of class 'data.frame' cannot be mixed with objects of other classes."))
-    } else {
+    } 
+    else 
+    {
       stop(paste0(moduleName, "> '", paste(allxy[which(!badClass)], collapse = "', '"),
                   "' does not match a data.frame's column, a RasterLayer or a RasterStack's layer."))
     }

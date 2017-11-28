@@ -5,11 +5,13 @@ library(SpaDES)
 
 set.seed(1)
 
+modulePath <- "~/Documents/GitHub/McIntire-lab/modulesPrivate/"
+
 # Define simulation parameters
 times <- list(start = 1, end = 1, timeunit = "year")
 modules <- list("fireSense_SizePredict")
 paths <- list(
-  modulePath = "~/Documents/GitHub/McIntire-lab/modulesPrivate/"
+  modulePath = modulePath
 )
 
 # Create random weather and fire size data

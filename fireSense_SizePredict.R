@@ -189,9 +189,9 @@ fireSense_SizePredictRun <- function(sim)
   xyTheta <- all.vars(formulaTheta)
   allxy <- unique(c(xyBeta, xyTheta))
 
-    sim$fireSense_SizePredicted[as.character(currentTime)] <-
   if (all(unlist(lapply(allxy, function(x) is.vector(envData[[x]])))))
   {
+    sim$fireSense_SizePredicted[[as.character(currentTime)]] <-
       list(beta = formulaBeta %>%
              model.matrix(envData) %>%
              `%*%` (sim[[P(sim)$modelName]]$coef$beta) %>%
@@ -201,10 +201,10 @@ fireSense_SizePredictRun <- function(sim)
              `%*%` (sim[[P(sim)$modelName]]$coef$theta) %>%
              drop %>% sim[[P(sim)$modelName]]$link$theta$linkinv(.)
       )
-    sim$fireSense_SizePredicted[as.character(currentTime)] <-
   } 
   else if (all(unlist(lapply(allxy, function(x) is(envData[[x]], "RasterLayer"))))) 
   {
+    sim$fireSense_SizePredicted[[as.character(currentTime)]] <-
       list(beta = mget(xyBeta, envir = envData, inherits = FALSE) %>%
              stack %>% predict(model = formulaBeta, fun = fireSense_SizePredictBetaRaster, na.rm = TRUE, sim = sim),
            theta = mget(xyTheta, envir = envData, inherits = FALSE) %>%

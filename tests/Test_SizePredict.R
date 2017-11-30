@@ -62,4 +62,4 @@ sim <- simInit(
 )
 
 sim <- spades(sim)
-sim$fireSense_SizePredicted
+sim$fireSense_SizePredicted[["1"]]

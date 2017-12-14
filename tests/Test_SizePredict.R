@@ -7,8 +7,10 @@ set.seed(1)
 
 modulePath <- "~/Documents/GitHub/McIntire-lab/modulesPrivate/"
 
+start <- end <- 1
+
 # Define simulation parameters
-times <- list(start = 1, end = 1, timeunit = "year")
+times <- list(start = start, end = end, timeunit = "year")
 modules <- list("fireSense_SizePredict")
 paths <- list(
   modulePath = modulePath
@@ -16,22 +18,30 @@ paths <- list(
 
 # Create random weather and fire size data
   # data.frame
-  dataObject <- data.frame(
-    weather = rnorm(1000, 150, 30),
-    size_ha = rtappareto(1000, .3, 1e4, a = 1)
-  )
+  dataObject <- setNames(
+    list(
+      data.frame(
+        weather = rnorm(1000, 150, 30),
+        size_ha = rtappareto(1000, .3, 1e4, a = 1)
+      )
+    ),
+    nm = start)
   
   # raster
   nx <- ny <- 100L
   size_ha <- raster(nrows = ny, ncols = nx, xmn = -nx/2, xmx = nx/2, ymn = -ny/2, ymx = ny/2) %>%
     setValues(rtappareto(ncell(.), .3, 1e4, a = 1))
   weather <- gaussMap(size_ha, scale = 300, var = 0.03, speedup = nx/5e2, inMemory = TRUE)
-  dataObject <- stack(weather, size_ha) %>% setNames(c("weather", "size_ha"))
+  dataObject <- stack(weather, size_ha) %>%
+    setNames(c("weather", "size_ha")) %>%
+    list() %>% 
+    setNames(nm = start)
 
 # Create a typical output of fireSense_SizeFit
 fireSense_SizeFitted <- list(
   formula = list(beta = size_ha ~ weather2,
                  theta = size_ha ~ weather),
+  a = 1,
   link = list(beta = make.link("log"),
               theta = make.link("identity")),
   coef = list(beta = setNames(c(1, 0.01), c("intercept", "weather2")),
@@ -62,4 +72,4 @@ sim <- simInit(
 )
 
 sim <- spades(sim)
-sim$fireSense_SizePredicted[["1"]]
+sim$fireSense_SizePredicted[[as.character(start)]]

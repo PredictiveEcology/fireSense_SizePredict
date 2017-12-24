@@ -144,17 +144,17 @@ fireSense_SizePredictRun <- function(sim)
   
   for (x in P(sim)$data)
   {
-    if (!is.null(sim[[x]][[as.character(currentTime)]]))
+    if (!is.null(sim[[x]]))
     {
-      if (is.data.frame(sim[[x]][[as.character(currentTime)]]))
+      if (is.data.frame(sim[[x]]))
       {
-        list2env(sim[[x]][[as.character(currentTime)]], envir = envData)
+        list2env(sim[[x]], envir = envData)
       } 
-      else if (is(sim[[x]][[as.character(currentTime)]], "RasterStack")) 
+      else if (is(sim[[x]], "RasterStack")) 
       {
-        list2env(setNames(unstack(sim[[x]][[as.character(currentTime)]]), names(sim[[x]][[as.character(currentTime)]])), envir = envData)
+        list2env(setNames(unstack(sim[[x]]), names(sim[[x]])), envir = envData)
       } 
-      else if (is(sim[[x]][[as.character(currentTime)]], "RasterLayer"))
+      else if (is(sim[[x]], "RasterLayer"))
       {
         # Do nothing
       } else stop(paste0(moduleName, "> '", x, "' is not a data.frame, a RasterLayer or a RasterStack."))
@@ -191,7 +191,7 @@ fireSense_SizePredictRun <- function(sim)
 
   if (all(unlist(lapply(allxy, function(x) is.vector(envData[[x]])))))
   {
-    sim$fireSense_SizePredicted[[as.character(currentTime)]] <-
+    sim$fireSense_SizePredicted <-
       list(beta = formulaBeta %>%
              model.matrix(envData) %>%
              `%*%` (sim[[P(sim)$modelName]]$coef$beta) %>%
@@ -205,7 +205,7 @@ fireSense_SizePredictRun <- function(sim)
   } 
   else if (all(unlist(lapply(allxy, function(x) is(envData[[x]], "RasterLayer"))))) 
   {
-    sim$fireSense_SizePredicted[[as.character(currentTime)]] <-
+    sim$fireSense_SizePredicted <-
       list(beta = mget(xyBeta, envir = envData, inherits = FALSE) %>%
              stack %>% predict(model = formulaBeta, fun = fireSense_SizePredictBetaRaster, na.rm = TRUE, sim = sim),
            theta = mget(xyTheta, envir = envData, inherits = FALSE) %>%

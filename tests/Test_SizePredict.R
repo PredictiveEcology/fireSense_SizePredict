@@ -18,14 +18,10 @@ paths <- list(
 
 # Create random weather and fire size data
   # data.frame
-  dataObject <- setNames(
-    list(
-      data.frame(
-        weather = rnorm(1000, 150, 30),
-        size_ha = rtappareto(1000, .3, 1e4, a = 1)
-      )
-    ),
-    nm = start)
+  dataObject <- data.frame(
+    weather = rnorm(1000, 150, 30),
+    size_ha = rtappareto(1000, .3, 1e4, a = 1)
+  )
   
   # raster
   nx <- ny <- 100L
@@ -33,9 +29,7 @@ paths <- list(
     setValues(rtappareto(ncell(.), .3, 1e4, a = 1))
   weather <- gaussMap(size_ha, scale = 300, var = 0.03, speedup = nx/5e2, inMemory = TRUE)
   dataObject <- stack(weather, size_ha) %>%
-    setNames(c("weather", "size_ha")) %>%
-    list() %>% 
-    setNames(nm = start)
+    setNames(c("weather", "size_ha"))
 
 # Create a typical output of fireSense_SizeFit
 fireSense_SizeFitted <- list(

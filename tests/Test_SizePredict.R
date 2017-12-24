@@ -5,7 +5,7 @@ library(SpaDES)
 
 set.seed(1)
 
-modulePath <- "~/Documents/GitHub/McIntire-lab/modulesPrivate/"
+modulePath <- normalizePath("..")
 
 start <- end <- 1
 
@@ -72,4 +72,4 @@ sim <- simInit(
 )
 
 sim <- spades(sim)
-sim$fireSense_SizePredicted[[as.character(start)]]
+sim$fireSense_SizePredicted

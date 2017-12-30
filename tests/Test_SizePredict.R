@@ -67,3 +67,4 @@ sim <- simInit(
 
 sim <- spades(sim)
 sim$fireSense_SizePredicted
+Plot(sim$fireSense_SizePredicted[c("beta", "theta")])

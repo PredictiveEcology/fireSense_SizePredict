@@ -190,28 +190,23 @@ fireSense_SizePredictRun <- function(sim)
 
   if (all(unlist(lapply(allxy, function(x) is.vector(envData[[x]])))))
   {
-    sim$fireSense_SizePredicted <-
-      list(beta = formulaBeta %>%
-             model.matrix(envData) %>%
-             `%*%` (sim[[P(sim)$modelName]]$coef$beta) %>%
-             drop %>% sim[[P(sim)$modelName]]$link$beta$linkinv(.),
-           theta = formulaTheta %>%
-             model.matrix(envData) %>%
-             `%*%` (sim[[P(sim)$modelName]]$coef$theta) %>%
-             drop %>% sim[[P(sim)$modelName]]$link$theta$linkinv(.),
-           a = sim[[P(sim)$modelName]]$a
-      )
+    sim$fireSense_SizePredicted_Beta <- formulaBeta %>%
+      model.matrix(envData) %>%
+      `%*%` (sim[[P(sim)$modelName]]$coef$beta) %>%
+      drop %>% sim[[P(sim)$modelName]]$link$beta$linkinv(.)
+           
+    sim$fireSense_SizePredicted_Theta <- formulaTheta %>%
+      model.matrix(envData) %>%
+      `%*%` (sim[[P(sim)$modelName]]$coef$theta) %>%
+      drop %>% sim[[P(sim)$modelName]]$link$theta$linkinv(.)
   } 
   else if (all(unlist(lapply(allxy, function(x) is(envData[[x]], "RasterLayer"))))) 
   {
-    sim$fireSense_SizePredicted <-
-      list(beta = mget(xyBeta, envir = envData, inherits = FALSE) %>%
-             stack %>% predict(model = formulaBeta, fun = fireSense_SizePredictBetaRaster, na.rm = TRUE, sim = sim),
-           theta = mget(xyTheta, envir = envData, inherits = FALSE) %>%
-             stack %>% predict(model = formulaTheta, fun = fireSense_SizePredictThetaRaster, na.rm = TRUE, sim = sim),
-           a = sim[[P(sim)$modelName]]$a
-      )
-
+    sim$fireSense_SizePredicted_Beta <- mget(xyBeta, envir = envData, inherits = FALSE) %>%
+      stack %>% predict(model = formulaBeta, fun = fireSense_SizePredictBetaRaster, na.rm = TRUE, sim = sim)
+    
+    sim$fireSense_SizePredicted_Theta <- mget(xyTheta, envir = envData, inherits = FALSE) %>%
+      stack %>% predict(model = formulaTheta, fun = fireSense_SizePredictThetaRaster, na.rm = TRUE, sim = sim)
   } 
   else 
   {
@@ -249,8 +244,13 @@ fireSense_SizePredictSave <- function(sim)
   currentTime <- time(sim, timeUnit)
   
   saveRDS(
-    sim$fireSense_SizePredicted, 
-    file = file.path(paths(sim)$out, paste0("fireSense_SizePredicted_", timeUnit, currentTime, ".rds"))
+    sim$fireSense_SizePredicted_Beta, 
+    file = file.path(paths(sim)$out, paste0("fireSense_SizePredicted_Beta", timeUnit, currentTime, ".rds"))
+  )
+  
+  saveRDS(
+    sim$fireSense_SizePredicted_Theta, 
+    file = file.path(paths(sim)$out, paste0("fireSense_SizePredicted_Theta", timeUnit, currentTime, ".rds"))
   )
   
   if (!is.na(P(sim)$.saveInterval))

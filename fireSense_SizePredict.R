@@ -96,9 +96,9 @@ doEvent.fireSense_SizePredict = function(sim, eventTime, eventType, debug = FALS
 {
   switch(
     eventType,
-    init = { sim <- sim$fireSense_SizePredictInit(sim) },
-    run = { sim <- sim$fireSense_SizePredictRun(sim) },
-    save = { sim <- sim$fireSense_SizePredictSave(sim) },
+    init = { sim <- sizePredictInit(sim) },
+    run = { sim <- sizePredictRun(sim) },
+    save = { sim <- sizePredictSave(sim) },
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
   )
@@ -112,7 +112,7 @@ doEvent.fireSense_SizePredict = function(sim, eventTime, eventType, debug = FALS
 #   - keep event functions short and clean, modularize by calling subroutines from section below.
 
 ### template initialization
-fireSense_SizePredictInit <- function(sim)
+sizePredictInit <- function(sim)
 {
   moduleName <- current(sim)$moduleName
   currentTime <- time(sim, timeunit(sim))
@@ -125,7 +125,7 @@ fireSense_SizePredictInit <- function(sim)
   invisible(sim)
 }
 
-fireSense_SizePredictRun <- function(sim)
+sizePredictRun <- function(sim)
 {
   stopifnot(is(sim[[P(sim)$modelName]], "fireSense_SizeFit"))
   
@@ -237,7 +237,7 @@ fireSense_SizePredictRun <- function(sim)
 }
 
 
-fireSense_SizePredictSave <- function(sim)
+sizePredictSave <- function(sim)
 {
   moduleName <- current(sim)$moduleName
   timeUnit <- timeunit(sim)

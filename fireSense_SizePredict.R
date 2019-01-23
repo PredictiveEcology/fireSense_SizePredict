@@ -73,7 +73,7 @@ defineModule(sim, list(
 
 ## Toolbox: set of functions used internally by the module
   ## Predict functions
-    sizePredictBetaRaster <- function(model, data, sim)
+    mod$sizePredictBetaRaster <- function(model, data, sim)
     {
       model %>%
         model.matrix(data) %>%
@@ -81,7 +81,7 @@ defineModule(sim, list(
         drop %>% sim[[P(sim)$modelName]]$link$beta$linkinv(.)
     }
 
-    sizePredictThetaRaster <- function(model, data, sim) 
+    mod$sizePredictThetaRaster <- function(model, data, sim) 
     {
       model %>%
         model.matrix(data) %>%
@@ -203,10 +203,10 @@ sizePredictRun <- function(sim)
   else if (all(unlist(lapply(allxy, function(x) is(envData[[x]], "RasterLayer"))))) 
   {
     sim$sizePredicted_Beta <- mget(xyBeta, envir = envData, inherits = FALSE) %>%
-      stack %>% predict(model = formulaBeta, fun = sizePredictBetaRaster, na.rm = TRUE, sim = sim)
+      stack %>% predict(model = formulaBeta, fun = mod$sizePredictBetaRaster, na.rm = TRUE, sim = sim)
     
     sim$sizePredicted_Theta <- mget(xyTheta, envir = envData, inherits = FALSE) %>%
-      stack %>% predict(model = formulaTheta, fun = sizePredictThetaRaster, na.rm = TRUE, sim = sim)
+      stack %>% predict(model = formulaTheta, fun = mod$sizePredictThetaRaster, na.rm = TRUE, sim = sim)
   } 
   else 
   {

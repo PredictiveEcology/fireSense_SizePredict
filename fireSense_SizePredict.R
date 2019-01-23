@@ -52,8 +52,8 @@ defineModule(sim, list(
   ),
   inputObjects = rbind(
     expectsInput(
-      objectName = "sizeFitted",
-      objectClass = "sizeFit",
+      objectName = "fireSense_SizeFitted",
+      objectClass = "fireSense_SizeFit",
       sourceURL = NA_character_,
       desc = "An object of class fireSense_SizeFit, i.e. created with the fireSense_SizeFit module."
     ),
@@ -65,7 +65,7 @@ defineModule(sim, list(
     )
   ),
   outputObjects = createsOutput(
-    objectName = "sizePredicted",
+    objectName = "fireSense_SizePredicted",
     objectClass = NA_character_,
     desc = "An object whose class depends on that of the inputs, could be a RasterLayer or a vector of type numeric."
   )
@@ -73,7 +73,7 @@ defineModule(sim, list(
 
 ## Toolbox: set of functions used internally by the module
   ## Predict functions
-    sizePredictBetaRaster <- function(model, data, sim)
+    fireSense_SizePredictBetaRaster <- function(model, data, sim)
     {
       model %>%
         model.matrix(data) %>%
@@ -81,7 +81,7 @@ defineModule(sim, list(
         drop %>% sim[[P(sim)$modelName]]$link$beta$linkinv(.)
     }
 
-    sizePredictThetaRaster <- function(model, data, sim) 
+    fireSense_SizePredictThetaRaster <- function(model, data, sim) 
     {
       model %>%
         model.matrix(data) %>%
@@ -186,22 +186,22 @@ sizePredictRun <- function(sim)
 
   if (all(unlist(lapply(allxy, function(x) is.vector(mod[[x]])))))
   {
-    sim$sizePredicted_Beta <- formulaBeta %>%
+    sim$fireSense_SizePredicted_Beta <- formulaBeta %>%
       model.matrix(mod) %>%
       `%*%` (sim[[P(sim)$modelName]]$coef$beta) %>%
       drop %>% sim[[P(sim)$modelName]]$link$beta$linkinv(.)
            
-    sim$sizePredicted_Theta <- formulaTheta %>%
+    sim$fireSense_SizePredicted_Theta <- formulaTheta %>%
       model.matrix(mod) %>%
       `%*%` (sim[[P(sim)$modelName]]$coef$theta) %>%
       drop %>% sim[[P(sim)$modelName]]$link$theta$linkinv(.)
   } 
   else if (all(unlist(lapply(allxy, function(x) is(mod[[x]], "RasterLayer"))))) 
   {
-    sim$sizePredicted_Beta <- mget(xyBeta, envir = mod, inherits = FALSE) %>%
+    sim$fireSense_SizePredicted_Beta <- mget(xyBeta, envir = mod, inherits = FALSE) %>%
       stack %>% predict(model = formulaBeta, fun = sizePredictBetaRaster, na.rm = TRUE, sim = sim)
     
-    sim$sizePredicted_Theta <- mget(xyTheta, envir = mod, inherits = FALSE) %>%
+    sim$fireSense_SizePredicted_Theta <- mget(xyTheta, envir = mod, inherits = FALSE) %>%
       stack %>% predict(model = formulaTheta, fun = sizePredictThetaRaster, na.rm = TRUE, sim = sim)
   } 
   else 
@@ -240,12 +240,12 @@ sizePredictSave <- function(sim)
   currentTime <- time(sim, timeUnit)
   
   saveRDS(
-    sim$sizePredicted_Beta, 
-    file = file.path(paths(sim)$out, paste0("fireSense_sizePredicted_Beta", timeUnit, currentTime, ".rds"))
+    sim$fireSense_SizePredicted_Beta, 
+    file = file.path(paths(sim)$out, paste0("fireSense_SizePredicted_Beta", timeUnit, currentTime, ".rds"))
   )
   
   saveRDS(
-    sim$sizePredicted_Theta, 
+    sim$fireSense_SizePredicted_Theta, 
     file = file.path(paths(sim)$out, paste0("fireSense_SizePredicted_Theta", timeUnit, currentTime, ".rds"))
   )
   

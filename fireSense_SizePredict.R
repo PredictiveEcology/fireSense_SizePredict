@@ -132,13 +132,9 @@ sizePredictRun <- function(sim)
   moduleName <- current(sim)$moduleName
   currentTime <- time(sim, timeunit(sim))
   endTime <- end(sim, timeunit(sim))
-
-  # Create a container to hold the data  
-  envData <- new.env(parent = envir(sim))
-  on.exit(rm(envData))
   
   # Load inputs in the data container
-  list2env(as.list(envir(sim)), envir = envData)
+  list2env(as.list(envir(sim)), envir = mod)
   
   for (x in P(sim)$data)
   {
@@ -146,11 +142,11 @@ sizePredictRun <- function(sim)
     {
       if (is.data.frame(sim[[x]]))
       {
-        list2env(sim[[x]], envir = envData)
+        list2env(sim[[x]], envir = mod)
       } 
       else if (is(sim[[x]], "RasterStack")) 
       {
-        list2env(setNames(unstack(sim[[x]]), names(sim[[x]])), envir = envData)
+        list2env(setNames(unstack(sim[[x]]), names(sim[[x]])), envir = mod)
       } 
       else if (is(sim[[x]], "RasterLayer"))
       {
@@ -188,36 +184,36 @@ sizePredictRun <- function(sim)
   xyTheta <- all.vars(formulaTheta)
   allxy <- unique(c(xyBeta, xyTheta))
 
-  if (all(unlist(lapply(allxy, function(x) is.vector(envData[[x]])))))
+  if (all(unlist(lapply(allxy, function(x) is.vector(mod[[x]])))))
   {
     sim$sizePredicted_Beta <- formulaBeta %>%
-      model.matrix(envData) %>%
+      model.matrix(mod) %>%
       `%*%` (sim[[P(sim)$modelName]]$coef$beta) %>%
       drop %>% sim[[P(sim)$modelName]]$link$beta$linkinv(.)
            
     sim$sizePredicted_Theta <- formulaTheta %>%
-      model.matrix(envData) %>%
+      model.matrix(mod) %>%
       `%*%` (sim[[P(sim)$modelName]]$coef$theta) %>%
       drop %>% sim[[P(sim)$modelName]]$link$theta$linkinv(.)
   } 
-  else if (all(unlist(lapply(allxy, function(x) is(envData[[x]], "RasterLayer"))))) 
+  else if (all(unlist(lapply(allxy, function(x) is(mod[[x]], "RasterLayer"))))) 
   {
-    sim$sizePredicted_Beta <- mget(xyBeta, envir = envData, inherits = FALSE) %>%
+    sim$sizePredicted_Beta <- mget(xyBeta, envir = mod, inherits = FALSE) %>%
       stack %>% predict(model = formulaBeta, fun = sizePredictBetaRaster, na.rm = TRUE, sim = sim)
     
-    sim$sizePredicted_Theta <- mget(xyTheta, envir = envData, inherits = FALSE) %>%
+    sim$sizePredicted_Theta <- mget(xyTheta, envir = mod, inherits = FALSE) %>%
       stack %>% predict(model = formulaTheta, fun = sizePredictThetaRaster, na.rm = TRUE, sim = sim)
   } 
   else 
   {
-    missing <- !allxy %in% ls(envData, all.names = TRUE)
+    missing <- !allxy %in% ls(mod, all.names = TRUE)
     
     if (s <- sum(missing))
       stop(moduleName, "> '", allxy[missing][1L], "'",
            if (s > 1) paste0(" (and ", s-1L, " other", if (s>2) "s", ")"),
            " not found in data objects.")
     
-    badClass <- unlist(lapply(allxy, function(x) is.vector(envData[[x]]) || is(envData[[x]], "RasterLayer")))
+    badClass <- unlist(lapply(allxy, function(x) is.vector(mod[[x]]) || is(mod[[x]], "RasterLayer")))
     
     if (any(badClass)) 
     {

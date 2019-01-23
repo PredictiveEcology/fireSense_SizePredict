@@ -241,12 +241,12 @@ sizePredictSave <- function(sim)
   
   saveRDS(
     sim$fireSense_SizePredicted_Beta, 
-    file = file.path(paths(sim)$out, paste0("fireSense_SizePredicted_Beta", timeUnit, currentTime, ".rds"))
+    file = file.path(paths(sim)$out, paste0("fireSense_SizePredicted_Beta_", timeUnit, currentTime, ".rds"))
   )
   
   saveRDS(
     sim$fireSense_SizePredicted_Theta, 
-    file = file.path(paths(sim)$out, paste0("fireSense_SizePredicted_Theta", timeUnit, currentTime, ".rds"))
+    file = file.path(paths(sim)$out, paste0("fireSense_SizePredicted_Theta_", timeUnit, currentTime, ".rds"))
   )
   
   if (!is.na(P(sim)$.saveInterval))

@@ -71,24 +71,6 @@ defineModule(sim, list(
   )
 ))
 
-## Toolbox: set of functions used internally by the module
-  ## Predict functions
-    sizePredictBetaRaster <- function(model, data, sim)
-    {
-      model %>%
-        model.matrix(data) %>%
-        `%*%` (sim[[P(sim)$modelName]]$coef$beta) %>%
-        drop %>% sim[[P(sim)$modelName]]$link$beta$linkinv(.)
-    }
-
-    sizePredictThetaRaster <- function(model, data, sim) 
-    {
-      model %>%
-        model.matrix(data) %>%
-        `%*%` (sim[[P(sim)$modelName]]$coef$theta) %>%
-        drop %>% sim[[P(sim)$modelName]]$link$theta$linkinv(.)
-    }
-
 ## event types
 #   - type `init` is required for initialiazation
 
@@ -132,7 +114,24 @@ sizePredictRun <- function(sim)
   moduleName <- current(sim)$moduleName
   currentTime <- time(sim, timeunit(sim))
   endTime <- end(sim, timeunit(sim))
-  
+ 
+  ## Toolbox: set of functions used internally by sizePredictRun
+    sizePredictBetaRaster <- function(model, data, sim)
+    {
+      model %>%
+        model.matrix(data) %>%
+        `%*%` (sim[[P(sim)$modelName]]$coef$beta) %>%
+        drop %>% sim[[P(sim)$modelName]]$link$beta$linkinv(.)
+    }
+    
+    sizePredictThetaRaster <- function(model, data, sim) 
+    {
+      model %>%
+        model.matrix(data) %>%
+        `%*%` (sim[[P(sim)$modelName]]$coef$theta) %>%
+        drop %>% sim[[P(sim)$modelName]]$link$theta$linkinv(.)
+    }
+
   # Load inputs in the data container
   list2env(as.list(envir(sim)), envir = mod)
   

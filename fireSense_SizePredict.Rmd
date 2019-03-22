@@ -26,7 +26,7 @@ downloadModule(moduleName, path = spadesModulesDirectory)
 Name|Default|Description
 ----|:-------|---------------------------------------------------------------------
 `modelName`|`"fireSense_SizeFitted"`|name of the object of class fireSense_SizeFit describing the statistical model used for predictions.
-`data`|`"dataFireSense_SizePredict"`|a character vector indicating the names of objects in the `simList` environment in which to look for variables present in the model formula. `data` objects can be data.frames, RasterStacks or RasterLayers. However, data.frames cannot be mixed with objects of other classes. If variables are not found in `data` objects, they are searched in the `simList` environment.
+`data`|`"dataFireSense_SizePredict"`|a character vector indicating the names of objects in the `simList` environment in which to look for variables present in the model formula. `data` objects can be data.frames, RasterStacks or RasterLayers. However, data.frames cannot be mixed with objects of other classes.
 `mapping`|`NULL`|optional named vector or list of character strings mapping one or more variables in the model formula to those in `data` objects.
 `.runInitialTime`|`start(simList)`|when to start this module? By default, the start time of the simulation.
 `.runInterval`|`NA`|optional. Interval between two runs of this module, expressed in units of simulation time.
@@ -41,6 +41,8 @@ library(raster)
 library(SpaDES)
 
 set.seed(123)
+
+spadesModulesDirectory <- ".."
 
 # Define simulation parameters
 times <- list(start = 1, end = 1, timeunit = "year")
@@ -105,7 +107,7 @@ sim$fireSense_SizePredicted_Theta
 # Events
 Events are scheduled as follows:
 
-- Module initiation
+- Module initialisation
 - Make predictions
 
 # Data dependencies
@@ -119,7 +121,7 @@ Events are scheduled as follows:
 Input object class | Output object class
 :-:|:-:
 `data.frame` | `numeric`
-`RasterLayer`<br>`RasterStack` | `RasterLayer`
+`RasterLayer`<br>`RasterStack`<br>`RasterBrick` | `RasterLayer`
 ||
 
 # Links to other modules

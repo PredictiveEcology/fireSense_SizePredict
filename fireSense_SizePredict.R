@@ -19,7 +19,7 @@ defineModule(sim, list(
   reqdPkgs = list("magrittr", "raster"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", default, min, max, "parameter description")),
-    defineParameter(name = "modelName", class = "character", 
+    defineParameter(name = "modelObjName", class = "character", 
                     default = "fireSense_SizeFitted",
                     desc = "name of the object of class fireSense_SizeFit
                             describing the statistical model used for
@@ -31,9 +31,7 @@ defineModule(sim, list(
                             variables present in the model formula. `data`
                             objects can be data.frames, RasterStacks or
                             RasterLayers. However, data.frames cannot be mixed
-                            with objects of other classes. If variables are not 
-                            found in `data` objects, they are searched in the
-                            `simList` environment."),
+                            with objects of other classes."),
     defineParameter(name = "mapping", class = "character, list", default = NULL,
                     desc = "optional named vector or list of character strings
                             mapping one or more variables in the model formula
@@ -76,11 +74,28 @@ defineModule(sim, list(
 
 doEvent.fireSense_SizePredict = function(sim, eventTime, eventType, debug = FALSE) 
 {
+  moduleName <- current(sim)$moduleName
+  
   switch(
     eventType,
-    init = { sim <- sizePredictInit(sim) },
-    run = { sim <- sizePredictRun(sim) },
-    save = { sim <- sizePredictSave(sim) },
+    init = { 
+      sim <- scheduleEvent(sim, eventTime = P(sim)$.runInitialTime, moduleName, "run")
+      
+      if (!is.na(P(sim)$.saveInitialTime))
+        sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, moduleName, "save", .last())
+    },
+    run = { 
+      sim <- sizePredictRun(sim) 
+      
+      if (!is.na(P(sim)$.runInterval)) # Assumes time only moves forward
+        sim <- scheduleEvent(sim, time(sim) + P(sim)$.runInterval, moduleName, "run")
+    },
+    save = {
+      sim <- sizePredictSave(sim)
+      
+      if (!is.na(P(sim)$.saveInterval))
+        sim <- scheduleEvent(sim, time(sim) + P(sim)$.saveInterval, moduleName, "save", .last())
+    },
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
   )
@@ -93,43 +108,28 @@ doEvent.fireSense_SizePredict = function(sim, eventTime, eventType, debug = FALS
 #   - `modulenameInit()` function is required for initiliazation;
 #   - keep event functions short and clean, modularize by calling subroutines from section below.
 
-### template initialization
-sizePredictInit <- function(sim)
-{
-  moduleName <- current(sim)$moduleName
-  currentTime <- time(sim, timeunit(sim))
-  
-  sim <- scheduleEvent(sim, eventTime = P(sim)$.runInitialTime, moduleName, "run")
-  
-  if (!is.na(P(sim)$.saveInitialTime))
-    sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, moduleName, "save", .last())
-  
-  invisible(sim)
-}
-
 sizePredictRun <- function(sim)
 {
-  stopifnot(is(sim[[P(sim)$modelName]], "fireSense_SizeFit"))
-  
   moduleName <- current(sim)$moduleName
-  currentTime <- time(sim, timeunit(sim))
-  endTime <- end(sim, timeunit(sim))
- 
+  
+  if (!is(sim[[P(sim)$modelObjName]], "fireSense_SizeFit"))
+    stop(moduleName, "> '", P(sim)$modelObjName, "' should be of class 'fireSense_SizeFit")
+  
   ## Toolbox: set of functions used internally by sizePredictRun
     sizePredictBetaRaster <- function(model, data, sim)
     {
       model %>%
         model.matrix(data) %>%
-        `%*%` (sim[[P(sim)$modelName]]$coef$beta) %>%
-        drop %>% sim[[P(sim)$modelName]]$link$beta$linkinv(.)
+        `%*%` (sim[[P(sim)$modelObjName]]$coef$beta) %>%
+        drop %>% sim[[P(sim)$modelObjName]]$link$beta$linkinv(.)
     }
     
     sizePredictThetaRaster <- function(model, data, sim) 
     {
       model %>%
         model.matrix(data) %>%
-        `%*%` (sim[[P(sim)$modelName]]$coef$theta) %>%
-        drop %>% sim[[P(sim)$modelName]]$link$theta$linkinv(.)
+        `%*%` (sim[[P(sim)$modelObjName]]$coef$theta) %>%
+        drop %>% sim[[P(sim)$modelObjName]]$link$theta$linkinv(.)
     }
 
   # Load inputs in the data container
@@ -155,8 +155,8 @@ sizePredictRun <- function(sim)
     }
   }
   
-  termsBeta <- delete.response(terms.formula(formulaBeta <- sim[[P(sim)$modelName]]$formula$beta))
-  termsTheta <- delete.response(terms.formula(formulaTheta <- sim[[P(sim)$modelName]]$formula$theta))
+  termsBeta <- delete.response(terms.formula(formulaBeta <- sim[[P(sim)$modelObjName]]$formula$beta))
+  termsTheta <- delete.response(terms.formula(formulaTheta <- sim[[P(sim)$modelObjName]]$formula$theta))
 
   ## Mapping variables names to data
   if (!is.null(P(sim)$mapping)) 
@@ -187,13 +187,13 @@ sizePredictRun <- function(sim)
   {
     sim$fireSense_SizePredicted_Beta <- formulaBeta %>%
       model.matrix(mod) %>%
-      `%*%` (sim[[P(sim)$modelName]]$coef$beta) %>%
-      drop %>% sim[[P(sim)$modelName]]$link$beta$linkinv(.)
+      `%*%` (sim[[P(sim)$modelObjName]]$coef$beta) %>%
+      drop %>% sim[[P(sim)$modelObjName]]$link$beta$linkinv(.)
            
     sim$fireSense_SizePredicted_Theta <- formulaTheta %>%
       model.matrix(mod) %>%
-      `%*%` (sim[[P(sim)$modelName]]$coef$theta) %>%
-      drop %>% sim[[P(sim)$modelName]]$link$theta$linkinv(.)
+      `%*%` (sim[[P(sim)$modelObjName]]$coef$theta) %>%
+      drop %>% sim[[P(sim)$modelObjName]]$link$theta$linkinv(.)
   } 
   else if (all(unlist(lapply(allxy, function(x) is(mod[[x]], "RasterLayer"))))) 
   {
@@ -221,20 +221,15 @@ sizePredictRun <- function(sim)
     else 
     {
       stop(moduleName, "> '", paste(allxy[which(!badClass)], collapse = "', '"),
-           "' does not match a data.frame's column, a RasterLayer or a RasterStack's layer.")
-}
+           "' does not match a data.frame's column, a RasterLayer or a layer from a RasterStack or RasterBrick.")
+    }
   }
-
-  if (!is.na(P(sim)$.runInterval)) # Assumes time only moves forward
-    sim <- scheduleEvent(sim, currentTime + P(sim)$.runInterval, moduleName, "run")
 
   invisible(sim)
 }
 
-
 sizePredictSave <- function(sim)
 {
-  moduleName <- current(sim)$moduleName
   timeUnit <- timeunit(sim)
   currentTime <- time(sim, timeUnit)
   
@@ -247,9 +242,6 @@ sizePredictSave <- function(sim)
     sim$fireSense_SizePredicted_Theta, 
     file = file.path(paths(sim)$out, paste0("fireSense_SizePredicted_Theta_", timeUnit, currentTime, ".rds"))
   )
-  
-  if (!is.na(P(sim)$.saveInterval))
-    sim <- scheduleEvent(sim, currentTime + P(sim)$.saveInterval, moduleName, "save", .last())
   
   invisible(sim)
 }

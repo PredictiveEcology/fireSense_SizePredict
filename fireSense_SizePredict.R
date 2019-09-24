@@ -135,21 +135,23 @@ sizePredictRun <- function(sim)
   # Load inputs in the data container
   # list2env(as.list(envir(sim)), envir = mod)
   
+  mod_env <- new.env()
+    
   for (x in P(sim)$data)
   {
     if (!is.null(sim[[x]]))
     {
       if (is.data.frame(sim[[x]]))
       {
-        list2env(sim[[x]], envir = mod)
+        list2env(sim[[x]], envir = mod_env)
       } 
       else if (is(sim[[x]], "RasterStack") || is(sim[[x]], "RasterBrick")) 
       {
-        list2env(setNames(unstack(sim[[x]]), names(sim[[x]])), envir = mod)
+        list2env(setNames(unstack(sim[[x]]), names(sim[[x]])), envir = mod_env)
       } 
       else if (is(sim[[x]], "RasterLayer"))
       {
-        mod[[x]] <- sim[[x]]
+        mod_env[[x]] <- sim[[x]]
       } 
       else stop(moduleName, "> '", x, "' is not a data.frame, a RasterLayer, a RasterStack or a RasterBrick.")
     }
@@ -183,36 +185,36 @@ sizePredictRun <- function(sim)
   xyTheta <- all.vars(formulaTheta)
   allxy <- unique(c(xyBeta, xyTheta))
 
-  if (all(unlist(lapply(allxy, function(x) is.vector(mod[[x]])))))
+  if (all(unlist(lapply(allxy, function(x) is.vector(mod_env[[x]])))))
   {
     sim$fireSense_SizePredicted_Beta <- formulaBeta %>%
-      model.matrix(mod) %>%
+      model.matrix(mod_env) %>%
       `%*%` (sim[[P(sim)$modelObjName]]$coef$beta) %>%
       drop %>% sim[[P(sim)$modelObjName]]$link$beta$linkinv(.)
            
     sim$fireSense_SizePredicted_Theta <- formulaTheta %>%
-      model.matrix(mod) %>%
+      model.matrix(mod_env) %>%
       `%*%` (sim[[P(sim)$modelObjName]]$coef$theta) %>%
       drop %>% sim[[P(sim)$modelObjName]]$link$theta$linkinv(.)
   } 
-  else if (all(unlist(lapply(allxy, function(x) is(mod[[x]], "RasterLayer"))))) 
+  else if (all(unlist(lapply(allxy, function(x) is(mod_env[[x]], "RasterLayer"))))) 
   {
-    sim$fireSense_SizePredicted_Beta <- mget(xyBeta, envir = mod, inherits = FALSE) %>%
+    sim$fireSense_SizePredicted_Beta <- mget(xyBeta, envir = mod_env, inherits = FALSE) %>%
       stack %>% predict(model = formulaBeta, fun = sizePredictBetaRaster, na.rm = TRUE, sim = sim)
     
-    sim$fireSense_SizePredicted_Theta <- mget(xyTheta, envir = mod, inherits = FALSE) %>%
+    sim$fireSense_SizePredicted_Theta <- mget(xyTheta, envir = mod_env, inherits = FALSE) %>%
       stack %>% predict(model = formulaTheta, fun = sizePredictThetaRaster, na.rm = TRUE, sim = sim)
   } 
   else 
   {
-    missing <- !allxy %in% ls(mod, all.names = TRUE)
+    missing <- !allxy %in% ls(mod_env, all.names = TRUE)
     
     if (s <- sum(missing))
       stop(moduleName, "> '", allxy[missing][1L], "'",
            if (s > 1) paste0(" (and ", s-1L, " other", if (s>2) "s", ")"),
            " not found in data objects.")
     
-    badClass <- unlist(lapply(allxy, function(x) is.vector(mod[[x]]) || is(mod[[x]], "RasterLayer")))
+    badClass <- unlist(lapply(allxy, function(x) is.vector(mod_env[[x]]) || is(mod_env[[x]], "RasterLayer")))
     
     if (any(badClass)) 
     {
